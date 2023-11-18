@@ -6,17 +6,12 @@ import argparse
 from datetime import datetime
 from queue import Queue
 from time import sleep
+from threading import Thread
 
 import speech_recognition as sr
 
-data_queue = Queue()
 
-
-def record_callback(_, audio) -> None:
-    data_queue.put(audio.get_raw_data())
-
-
-def main():
+def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model",
@@ -38,7 +33,31 @@ def main():
         default=True,
         help="Adjust the energy threshold dynamically",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+audio_queue = Queue()
+text_queue = Queue()
+
+
+def record_callback(_, audio) -> None:
+    audio_queue.put(audio.get_raw_data())
+
+
+def transcription_thread(recorder, model, sample_rate, sample_width):
+    with open("data/" + datetime.now().strftime("%Y_%m_%d-%H_%M_%S") + ".txt", "w") as outf:
+        while True:
+            if not audio_queue.empty():
+                text = recorder.recognize_whisper(
+                    sr.AudioData(audio_queue.get(), sample_rate, sample_width), model=model
+                ).strip()
+                text_queue.put(text)
+                print(text, file=outf, flush=True)
+            sleep(0.25)
+
+
+def main():
+    args = get_args()
 
     # We use SpeechRecognizer to record our audio because it has a nice feature where it can detect when speech ends.
     recorder = sr.Recognizer()
@@ -50,20 +69,19 @@ def main():
     recorder.listen_in_background(source, record_callback)
 
     print("Now listening...")
+    trans_thread = Thread(
+        target=transcription_thread, args=(recorder, args.model, source.SAMPLE_RATE, source.SAMPLE_WIDTH), daemon=True
+    )
+    trans_thread.start()
 
-    # open a file with the current datetime as the name, without any special characters
-    with open(datetime.now().strftime("%Y_%m_%d-%H_%M_%S") + ".txt", "w") as outf:
-        while True:
-            try:
-                if not data_queue.empty():
-                    text = recorder.recognize_whisper(
-                        sr.AudioData(data_queue.get(), source.SAMPLE_RATE, source.SAMPLE_WIDTH), model=args.model
-                    ).strip()
-                    print(text)
-                    print(text, file=outf)
-                    sleep(0.25)
-            except KeyboardInterrupt:
-                break
+    while True:
+        try:
+            while not text_queue.empty():
+                print(text_queue.get())
+            sleep(0.25)
+        except KeyboardInterrupt:
+            print("Bye")
+            break
 
 
 if __name__ == "__main__":
