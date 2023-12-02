@@ -5,6 +5,8 @@ SpeechRecognition
 soundfile
 tiktoken
 requests
+flask
+python-dotenv
 --index-url https://download.pytorch.org/whl/cu118
 torch 
 torchvision 

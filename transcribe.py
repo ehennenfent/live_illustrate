@@ -15,6 +15,10 @@ from functools import lru_cache
 from collections import deque
 import requests
 
+from flask import Flask, send_from_directory
+
+app = Flask(__name__)
+
 SYSTEM_PROMPT = "You are a helpful assistant that describes scenes to an artist who wants to draw them. \
 You will be given several lines of dialogue that contain details about the physical surroundings of the characters. \
 Your job is to summarize the details of the scene in a bulleted list containing 4-7 bullet points. \
@@ -23,33 +27,24 @@ Remember to be concise and not include details that cannot be seen."
 WAIT_SECONDS = 7.5 * 60
 MAX_CONTEXT = 4000  # Probably 15-25 minutes of conversation
 
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model",
         default="medium.en",
         help="Model to use",
-        choices=[
-            "tiny.en",
-            "base.en",
-            "small.en",
-            "medium.en",
-            "large",
-            "large-v2",
-            "large-v3",
-        ],
+        choices=["tiny.en", "base.en", "small.en", "medium.en", "large", "large-v2", "large-v3"],
     )
     parser.add_argument(
-        "--dynamic_energy_threshold",
-        action="store_true",
-        default=True,
-        help="Adjust the energy threshold dynamically",
+        "--dynamic_energy_threshold", action="store_true", default=True, help="Adjust the energy threshold dynamically"
     )
     return parser.parse_args()
 
 
 audio_queue = Queue()
 text_buffer = []
+image_url = "https://placehold.co/1792x1024/png"
 
 
 @lru_cache(maxsize=20)
@@ -70,6 +65,7 @@ def get_last_n_tokens(n: int) -> str:
             break
         context.append(my_copy.pop())
     return "\n".join(reversed(context))
+
 
 def save_image(url):
     try:
@@ -113,28 +109,26 @@ def image_thread():
             last_run = datetime.now()
             try:
                 response = openai_client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {"role": "system", "content": SYSTEM_PROMPT},
-                            {"role": "user", "content": get_last_n_tokens(MAX_CONTEXT)},
-                        ]
-                    )
-                text = response['choices'][-1]['message']['content'].strip()
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": get_last_n_tokens(MAX_CONTEXT)},
+                    ],
+                )
+                text = response["choices"][-1]["message"]["content"].strip()
 
                 rendered = openai_client.images.generate(
-                    model="dall-e-3",
-                    prompt=text,
-                    size="1792×1024",
-                    quality="standard",
-                    n=1,
+                    model="dall-e-3", prompt=text, size="1792×1024", quality="standard", n=1
                 )
 
+                global image_url
                 image_url = rendered.data[0].url
                 save_image(image_url)
             except Exception as e:
                 print("Exception while calling OpenAPI:", e)
 
         sleep(1)
+
 
 def main():
     args = get_args()
@@ -157,12 +151,17 @@ def main():
     trans_thread.start()
     render_thread.start()
 
-    while True:
-        try:
-            sleep(0.5)
-        except KeyboardInterrupt:
-            print("Bye")
-            break
+    app.run(host="0.0.0.0", port=8080)
+
+
+@app.route("/")
+def hello_world():
+    return send_from_directory("templates", "index.html")
+
+
+@app.route("/image")
+def send_report():
+    return f"<img src='{image_url}' class='center-fit'/>"
 
 
 if __name__ == "__main__":
