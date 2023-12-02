@@ -64,7 +64,7 @@ def get_last_n_tokens(n: int) -> str:
         if not my_copy:
             break
         context.append(my_copy.pop())
-    return "\n".join(reversed(context))
+    return "\n".join(reversed(context[:-1]))
 
 
 def save_image(url):
@@ -93,6 +93,7 @@ def transcription_thread(recorder, model, sample_rate, sample_width):
                 ).strip()
                 text_buffer.append(text)
                 try:
+                    print(datetime.now(), ">", text)
                     print(datetime.now(), ">", text, file=outf, flush=True)
                 except Exception as e:
                     print("failed to write text to file:", e)
@@ -115,10 +116,13 @@ def image_thread():
                         {"role": "user", "content": get_last_n_tokens(MAX_CONTEXT)},
                     ],
                 )
-                text = response["choices"][-1]["message"]["content"].strip()
+                text = [
+                    choice.message.content.strip() for choice in response.choices
+                ][-1]
 
+                print("got response from ChatGPT: ", text)
                 rendered = openai_client.images.generate(
-                    model="dall-e-3", prompt=text, size="1792×1024", quality="standard", n=1
+                    model="dall-e-3", prompt=text, size="1792x1024", quality="standard", n=1
                 )
 
                 global image_url
