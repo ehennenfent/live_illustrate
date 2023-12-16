@@ -26,7 +26,6 @@ jobs:
         python -m pip install --upgrade pip
         sudo apt install portaudio19-dev
         pip install .[dev]
-        mypy --install-types
     - name: Lint imports
       run: isort .
     - name: Lint formatting
