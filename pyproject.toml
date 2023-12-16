@@ -38,6 +38,7 @@ dev = [
     "isort", 
     "mypy",
     "ruff",
+    "types-requests",
 ]
 
 [project.scripts]
