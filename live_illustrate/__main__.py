@@ -48,13 +48,25 @@ def get_args() -> argparse.Namespace:
         "--image_model",
         default="dall-e-3",
         help="Diffusion model to use for generating image",
-        choices=["dall-e-3"],
+        choices=["dall-e-3", "dall-e-2"],
     )
     parser.add_argument(
         "--image_size",
         default="1792x1024",
         help="Size of image to render (smaller is cheaper)",
-        choices=["1792x1024", "1024x1024"],
+        choices=["1792x1024", "1024x1792", "1024x1024", "512x512", "256x256"],
+    )
+    parser.add_argument(
+        "--image_quality",
+        default="standard",
+        help="How fancy of an image to render",
+        choices=["standard", "hd"],
+    )
+    parser.add_argument(
+        "--image_style",
+        default="vivid",
+        help="How stylized of an image to render",
+        choices=["vivid", "natural"],
     )
     parser.add_argument(
         "--server_host",
@@ -90,7 +102,12 @@ def main() -> None:
             wait_minutes=args.wait_minutes, max_context=args.max_context, persistence=args.persistence_of_memory
         )
         summarizer = TextSummarizer(model=args.summarize_model)
-        renderer = ImageRenderer(model=args.image_model, image_size=args.image_size)
+        renderer = ImageRenderer(
+            model=args.image_model,
+            image_size=args.image_size,
+            image_quality=args.image_quality,
+            image_style=args.image_style,
+        )
         server = ImageServer(
             host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
         )
