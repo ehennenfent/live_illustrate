@@ -1,17 +1,19 @@
 import argparse
 from datetime import datetime
 from threading import Thread
+from time import sleep
+from webbrowser import open_new_tab
 
 import requests
 from dotenv import load_dotenv
-
-load_dotenv()
 
 from .render import ImageRenderer
 from .serve import ImageServer
 from .summarize import TextSummarizer
 from .text_buffer import TextBuffer
 from .transcribe import AudioTranscriber
+
+load_dotenv()
 
 
 def get_args():
@@ -46,6 +48,22 @@ def get_args():
         help="Diffusion model to use for generating image",
         choices=["dall-e-3"],
     )
+    parser.add_argument(
+        "--server_host",
+        default="0.0.0.0",
+        help="Address to bind web server",
+    )
+    parser.add_argument(
+        "--server_port",
+        default=8080,
+        type=int,
+        help="Port to serve HTML viewer on",
+    )
+    parser.add_argument(
+        "--open",
+        action="store_true",
+        help="Automatically open a browser tab for the rendered images",
+    )
     return parser.parse_args()
 
 
@@ -69,7 +87,7 @@ def main():
         buffer = TextBuffer(wait_minutes=args.wait_minutes, max_context=args.max_context)
         summarizer = TextSummarizer(model=args.summarize_model)
         renderer = ImageRenderer(model=args.image_model)
-        server = ImageServer()
+        server = ImageServer(host=args.server_host, port=args.server_port)
 
         def on_image_rendered(url):
             save_image(url)
@@ -95,6 +113,14 @@ def main():
         Thread(target=summarizer.start, args=(on_summary_generated,), daemon=True).start()
         Thread(target=renderer.start, args=(on_image_rendered,), daemon=True).start()
         Thread(target=buffer.buffer_forever, args=(summarizer.send,), daemon=True).start()
+
+        if args.open:
+
+            def open_browser():
+                sleep(2)
+                open_new_tab(f"http://{args.server_host}:{args.server_port}")
+
+            Thread(target=lambda: open_browser).start()
 
         server.start()
 
