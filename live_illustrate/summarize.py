@@ -1,7 +1,7 @@
 from datetime import datetime
 from openai import OpenAI
 
-from .util import AsyncThread
+from .util import AsyncThread, num_tokens_from_string
 
 SYSTEM_PROMPT = "You are a helpful assistant that describes scenes to an artist who wants to draw them. \
 You will be given several lines of dialogue that contain details about the physical surroundings of the characters. \
@@ -25,5 +25,5 @@ class TextSummarizer(AsyncThread):
                 {"role": "user", "content": text},
             ],
         )
-        print("[INFO] Summarized in", datetime.now() - start)
+        print("[INFO] Summarized", num_tokens_from_string(text), "tokens in", datetime.now() - start)
         return [choice.message.content.strip() for choice in response.choices][-1]

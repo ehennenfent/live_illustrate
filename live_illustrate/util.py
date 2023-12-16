@@ -2,10 +2,12 @@ import typing as t
 from abc import abstractmethod
 from queue import Queue
 from time import sleep
+from functools import lru_cache
 
 import tiktoken
 
 
+@lru_cache(maxsize=2)
 def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
     encoding = tiktoken.get_encoding(encoding_name)
     num_tokens = len(encoding.encode(string))
