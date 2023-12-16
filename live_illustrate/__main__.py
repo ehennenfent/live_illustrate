@@ -16,7 +16,7 @@ from .transcribe import AudioTranscriber
 load_dotenv()
 
 
-def get_args():
+def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--audio_model",
@@ -67,7 +67,7 @@ def get_args():
     return parser.parse_args()
 
 
-def save_image(url):
+def save_image(url: str) -> None:
     try:
         r = requests.get((url), stream=True)
         if r.status_code == 200:
@@ -79,7 +79,7 @@ def save_image(url):
         print("failed to write image to file:", e)
 
 
-def main():
+def main() -> None:
     with open("data/" + datetime.now().strftime("%Y_%m_%d-%H_%M_%S") + ".txt", "w") as transf:
         args = get_args()
 
@@ -89,11 +89,11 @@ def main():
         renderer = ImageRenderer(model=args.image_model)
         server = ImageServer(host=args.server_host, port=args.server_port)
 
-        def on_image_rendered(url):
+        def on_image_rendered(url: str) -> None:
             save_image(url)
             server.update_image(url)
 
-        def on_text_transcribed(text):
+        def on_text_transcribed(text: str) -> None:
             try:
                 print(datetime.now(), ">", text)
                 print(datetime.now(), ">", text, file=transf, flush=True)
@@ -101,7 +101,7 @@ def main():
                 print("failed to write text to file:", e)
             buffer.send(text)
 
-        def on_summary_generated(text):
+        def on_summary_generated(text: str) -> None:
             with open("data/" + datetime.now().strftime("%Y_%m_%d-%H_%M_%S_summary") + ".txt", "w") as summaryf:
                 try:
                     print(datetime.now(), ">", text, file=summaryf)
@@ -116,7 +116,7 @@ def main():
 
         if args.open:
 
-            def open_browser():
+            def open_browser() -> None:
                 sleep(2)
                 open_new_tab(f"http://{args.server_host}:{args.server_port}")
 

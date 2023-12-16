@@ -10,12 +10,12 @@ Remember to be concise and not include details that cannot be seen."
 
 
 class TextSummarizer(AsyncThread):
-    def __init__(self, model) -> None:
+    def __init__(self, model: str) -> None:
         super().__init__()
-        self.openai_client = OpenAI()
-        self.model = model
+        self.openai_client: OpenAI = OpenAI()
+        self.model: str = model
 
-    def summarize(self, text: str) -> str:
+    def work(self, text: str) -> str:
         response = self.openai_client.chat.completions.create(
             model=self.model,
             messages=[

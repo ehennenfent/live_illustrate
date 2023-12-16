@@ -1,3 +1,4 @@
+import typing as t
 from abc import abstractmethod
 from queue import Queue
 from time import sleep
@@ -15,17 +16,17 @@ class AsyncThread:
     SLEEP_TIME = 0.25
 
     def __init__(self) -> None:
-        self.queue = Queue()
+        self.queue: Queue[t.Any] = Queue()
 
     @abstractmethod
-    def work(self, *args):
+    def work(self, *args) -> t.Any:
         raise NotImplementedError()
 
-    def start(self, callback):
+    def start(self, callback) -> None:
         while True:
             if not self.queue.empty():
                 callback(self.work(*self.queue.get()))
             sleep(self.SLEEP_TIME)
 
-    def send(self, *args):
+    def send(self, *args) -> None:
         self.queue.put(args)
