@@ -1,39 +1,34 @@
 import typing as t
-from collections import deque
 from datetime import datetime
 from time import sleep
 
-from .util import AsyncThread, num_tokens_from_string
+from .util import AsyncThread, get_last_n_tokens, num_tokens_from_string
 
 
 class TextBuffer(AsyncThread):
-    def __init__(self, wait_minutes: float, max_context: int) -> None:
+    def __init__(self, wait_minutes: float, max_context: int, persistence: float = 1.0) -> None:
         super().__init__()
         self.buffer: t.List[str] = []
         self.wait_seconds: int = int(wait_minutes * 60)
         self.max_context: int = max_context
+        self.persistence: float = persistence
 
     def work(self, next_text: str) -> int:
         self.buffer.append(next_text)
         return len(self.buffer)
 
-    def get_last_n_tokens(self, n: int) -> str:
-        if not self.buffer:
-            return ""
-        my_copy = deque(self.buffer)
-        context = [my_copy.pop()]
-        while num_tokens_from_string("\n".join(context)) < self.max_context:
-            if not my_copy:
-                break
-            context.append(my_copy.pop())
-        if len(context) == 1:
-            return context[0]
-        return "\n".join(reversed(context[:-1]))
+    def get_context(self) -> str:
+        context = "\n".join(get_last_n_tokens(self.buffer, self.max_context))
+        if self.persistence < 1.0:
+            self.buffer = get_last_n_tokens(
+                self.buffer, int(self.persistence * num_tokens_from_string("\n".join(self.buffer)))
+            )
+        return context
 
     def buffer_forever(self, callback: t.Callable[[str], t.Any]) -> None:
         last_run = datetime.now()
         while True:
             if (datetime.now() - last_run).seconds > self.wait_seconds:
                 last_run = datetime.now()
-                callback(self.get_last_n_tokens(self.max_context))
+                callback(self.get_context())
             sleep(1)

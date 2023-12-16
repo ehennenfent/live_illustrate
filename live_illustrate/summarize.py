@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from openai import OpenAI
 
 from .util import AsyncThread, num_tokens_from_string

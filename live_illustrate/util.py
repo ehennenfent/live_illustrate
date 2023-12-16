@@ -1,8 +1,8 @@
 import typing as t
 from abc import abstractmethod
+from functools import lru_cache
 from queue import Queue
 from time import sleep
-from functools import lru_cache
 
 import tiktoken
 
@@ -12,6 +12,17 @@ def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> i
     encoding = tiktoken.get_encoding(encoding_name)
     num_tokens = len(encoding.encode(string))
     return num_tokens
+
+
+def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
+    if not buffer:
+        return []
+    context: t.List[str] = []
+    for line in reversed(buffer):
+        if num_tokens_from_string("\n".join(context) + "\n" + line) > n:
+            break
+        context.append(line)
+    return [c for c in reversed(context)]
 
 
 class AsyncThread:

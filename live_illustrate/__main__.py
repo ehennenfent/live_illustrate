@@ -72,6 +72,12 @@ def get_args() -> argparse.Namespace:
         action="store_true",
         help="Automatically open a browser tab for the rendered images",
     )
+    parser.add_argument(
+        "--persistence_of_memory",
+        default=0.2,
+        type=float,
+        help="How much of the previous transcription to retain after generating each summary",
+    )
     return parser.parse_args()
 
 
@@ -80,10 +86,14 @@ def main() -> None:
         args = get_args()
 
         transcriber = AudioTranscriber(model=args.audio_model)
-        buffer = TextBuffer(wait_minutes=args.wait_minutes, max_context=args.max_context)
+        buffer = TextBuffer(
+            wait_minutes=args.wait_minutes, max_context=args.max_context, persistence=args.persistence_of_memory
+        )
         summarizer = TextSummarizer(model=args.summarize_model)
         renderer = ImageRenderer(model=args.image_model, image_size=args.image_size)
-        server = ImageServer(host=args.server_host, port=args.server_port)
+        server = ImageServer(
+            host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
+        )
 
         def on_image_rendered(url: str) -> None:
             session_data.save_image(url)

@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from openai import OpenAI
 
 from .util import AsyncThread
@@ -8,11 +9,11 @@ EXTRA = "digital painting, fantasy art"
 
 
 class ImageRenderer(AsyncThread):
-    def __init__(self, model: str, image_size=str) -> None:
+    def __init__(self, model: str, image_size: str) -> None:
         super().__init__()
         self.openai_client: OpenAI = OpenAI()
         self.model: str = model
-        self.size = image_size
+        self.size: str = image_size
 
     def work(self, text: str) -> str:
         start = datetime.now()
