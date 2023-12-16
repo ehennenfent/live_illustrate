@@ -23,7 +23,10 @@
             max-width: 100%;
             max-height: 100vh;
             margin: auto;
-            transition: all 3999ms ease-in;
+
+            /* TODO: This _kinda_ works, but because we haven't preloaded the images from OpenAI, 
+            it's very hit or miss. Fade-out is a lot more consistent than fade-in. */
+            transition: all 3999ms ease-in; 
         }
     </style>
 </head>

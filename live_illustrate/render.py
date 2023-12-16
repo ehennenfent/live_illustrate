@@ -4,6 +4,7 @@ from openai import OpenAI
 
 from .util import AsyncThread
 
+# Hacky, but an easy way to get slightly more consistent results
 EXTRA = "digital painting, fantasy art"
 
 
@@ -17,6 +18,7 @@ class ImageRenderer(AsyncThread):
         self.image_style: str = image_style
 
     def work(self, text: str) -> str:
+        """Sends the text to Dall-e, spits out an image URL"""
         start = datetime.now()
         rendered = self.openai_client.images.generate(
             model=self.model,
@@ -26,5 +28,6 @@ class ImageRenderer(AsyncThread):
             style=self.image_style,
             n=1,
         ).data[0]
+        # TODO: Mypy has reminded me that we are not handling API failures here
         print("[INFO] Rendered in", datetime.now() - start)
         return rendered.url

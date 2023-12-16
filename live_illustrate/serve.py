@@ -3,6 +3,7 @@ import typing as t
 
 from flask import Flask, Response, send_from_directory
 
+# silence the logging for every single request
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 
@@ -25,6 +26,8 @@ class ImageServer:
         return send_from_directory("templates", "index.html")
 
     def serve_image_tag(self, index: str) -> str:
+        """Sneaky image handler that counts up by index until we get to the most recent image,
+        using HTMX to re-request the endpoint every few seconds."""
         if not index.isdigit():
             index = -1
         index = int(index)

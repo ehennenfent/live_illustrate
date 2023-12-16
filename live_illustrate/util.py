@@ -9,12 +9,14 @@ import tiktoken
 
 @lru_cache(maxsize=2)
 def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
+    """Use OpenAI's tokenizer to count the number of tokens"""
     encoding = tiktoken.get_encoding(encoding_name)
     num_tokens = len(encoding.encode(string))
     return num_tokens
 
 
 def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
+    """Conservatively grabs the last n-ish tokens worth of lines from the buffer. Will undershoot."""
     if not buffer:
         return []
     context: t.List[str] = []
@@ -26,6 +28,8 @@ def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
 
 
 class AsyncThread:
+    """Generic thread that has a work queue and a callback to run on the result"""
+
     SLEEP_TIME = 0.25
 
     def __init__(self) -> None:

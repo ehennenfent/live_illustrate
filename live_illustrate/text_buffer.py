@@ -14,10 +14,13 @@ class TextBuffer(AsyncThread):
         self.persistence: float = persistence
 
     def work(self, next_text: str) -> int:
+        """Very simple, just puts the text in the buffer. The real work is done in buffer_forever."""
         self.buffer.append(next_text)
         return len(self.buffer)
 
     def get_context(self) -> str:
+        """Grabs the last max_context tokens from the buffer. If persistence < 1, trims it down
+        to at most persistence * 100 %"""
         context = "\n".join(get_last_n_tokens(self.buffer, self.max_context))
         if self.persistence < 1.0:
             self.buffer = get_last_n_tokens(
@@ -26,6 +29,8 @@ class TextBuffer(AsyncThread):
         return context
 
     def buffer_forever(self, callback: t.Callable[[str], t.Any]) -> None:
+        """every wait_seconds, grabs the last max_context tokens and sends them off to the
+        summarizer (via `callback`)"""
         last_run = datetime.now()
         while True:
             if (datetime.now() - last_run).seconds > self.wait_seconds:

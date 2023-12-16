@@ -8,7 +8,7 @@ SYSTEM_PROMPT = "You are a helpful assistant that describes scenes to an artist 
 You will be given several lines of dialogue that contain details about the physical surroundings of the characters. \
 Your job is to summarize the details of the scene in a bulleted list containing 4-7 bullet points. \
 If there is more than one scene described by the dialog, summarize only the most recent one. \
-Remember to be concise and not include details that cannot be seen."
+Remember to be concise and not include details that cannot be seen."  # Not so good about this last bit, eh?
 
 
 class TextSummarizer(AsyncThread):
@@ -18,6 +18,7 @@ class TextSummarizer(AsyncThread):
         self.model: str = model
 
     def work(self, text: str) -> str:
+        """Sends the big buffer of provided text to ChatGPT, returns bullets describing the setting"""
         start = datetime.now()
         response = self.openai_client.chat.completions.create(
             model=self.model,
@@ -27,4 +28,5 @@ class TextSummarizer(AsyncThread):
             ],
         )
         print("[INFO] Summarized", num_tokens_from_string(text), "tokens in", datetime.now() - start)
+        # TODO: Mypy has reminded me that we are not handling API failures here
         return [choice.message.content.strip() for choice in response.choices][-1]

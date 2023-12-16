@@ -5,6 +5,8 @@ import requests
 
 
 class SessionData:
+    """Creates a data/<tunestano> folder for the session and stores images, summaries, and transcripts"""
+
     def __init__(self, data_dir: Path, echo: bool = True) -> None:
         self.start_time = datetime.now()
 
@@ -22,6 +24,7 @@ class SessionData:
             print("failed to save image to file:", e)
 
     def save_summary(self, text: str):
+        """saves the provided text to its own file"""
         try:
             with open(self.data_dir.joinpath(f"{self._time_since}.txt"), "w") as summaryf:
                 print(text, file=summaryf)
@@ -29,6 +32,7 @@ class SessionData:
             print("failed to write summary to file:", e)
 
     def save_transcription(self, text: str):
+        """appends the provided text to the transcript file"""
         try:
             with open(self.data_dir.joinpath("transcript.txt"), "a") as transf:
                 if self.echo:
@@ -45,7 +49,7 @@ class SessionData:
 
         return f"{hours}h_{minutes:02}m_{seconds:02}s"
 
-    def __enter__(self) -> "SessionData":
+    def __enter__(self) -> "SessionData":  # create the directories upon entry, not upon init
         if not (parent := self.data_dir.parent).exists():
             parent.mkdir()
         self.data_dir.mkdir()

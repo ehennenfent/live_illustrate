@@ -19,7 +19,7 @@ DEFAULT_DATA_DIR = Path(__file__).parent.parent.joinpath("data")
 
 
 def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("Automatic live illustration for table-top RPGs")
     parser.add_argument(
         "--audio_model",
         default="medium.en",
@@ -34,7 +34,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--max_context",
-        default=2000,
+        default=2000,  # very roughly ten minutes or so?
         type=int,
         help="Maximum number of tokens to summarize from the conversations",
     )
@@ -86,9 +86,9 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--persistence_of_memory",
-        default=0.2,
+        default=0.2,  # Expressed as a fraction of the total buffered transcription
         type=float,
-        help="How much of the previous transcription to retain after generating each summary",
+        help="How much of the previous transcription to retain after generating each summary. 0 - 1.0",
     )
     return parser.parse_args()
 
@@ -97,6 +97,7 @@ def main() -> None:
     with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
         args = get_args()
 
+        # create each of our thread objects with the apppropriate command line args
         transcriber = AudioTranscriber(model=args.audio_model)
         buffer = TextBuffer(
             wait_minutes=args.wait_minutes, max_context=args.max_context, persistence=args.persistence_of_memory
@@ -112,10 +113,7 @@ def main() -> None:
             host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
         )
 
-        def on_image_rendered(url: str) -> None:
-            session_data.save_image(url)
-            server.update_image(url)
-
+        # wire up some callbacks to save the intermediate data and forward it along
         def on_text_transcribed(text: str) -> None:
             session_data.save_transcription(text)
             buffer.send(text)
@@ -124,20 +122,30 @@ def main() -> None:
             session_data.save_summary(text)
             renderer.send(text)
 
+        def on_image_rendered(url: str) -> None:
+            session_data.save_image(url)
+            server.update_image(url)
+
+        # start each thread with the appropriate callback
         Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()
         Thread(target=summarizer.start, args=(on_summary_generated,), daemon=True).start()
         Thread(target=renderer.start, args=(on_image_rendered,), daemon=True).start()
+
+        # Buffer has two threads running at once - one to just pull text from the queue and
+        # append it to the buffer, and one to wake up every few minutes and grab the context
+        # for summarizing.
         Thread(target=buffer.start, args=(lambda _len: None,), daemon=True).start()
         Thread(target=buffer.buffer_forever, args=(summarizer.send,), daemon=True).start()
 
         if args.open:
-
+            # opening the browser tab automatically doesn't seem to work through WSL
             def open_browser() -> None:
                 sleep(2)
                 open_new_tab(f"http://{args.server_host}:{args.server_port}")
 
             Thread(target=lambda: open_browser).start()
 
+        # flask feels like it probably has a good ctrl+c handler, so we'll make this one the main thread
         server.start()
 
 
