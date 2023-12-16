@@ -1,19 +1,21 @@
 import argparse
-from datetime import datetime
+from pathlib import Path
 from threading import Thread
 from time import sleep
 from webbrowser import open_new_tab
 
-import requests
 from dotenv import load_dotenv
 
 from .render import ImageRenderer
 from .serve import ImageServer
+from .session_data import SessionData
 from .summarize import TextSummarizer
 from .text_buffer import TextBuffer
 from .transcribe import AudioTranscriber
 
 load_dotenv()
+
+DEFAULT_DATA_DIR = Path(__file__).parent.parent.joinpath("data")
 
 
 def get_args() -> argparse.Namespace:
@@ -67,20 +69,8 @@ def get_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def save_image(url: str) -> None:
-    try:
-        r = requests.get((url), stream=True)
-        if r.status_code == 200:
-            with open("data/" + datetime.now().strftime("%Y_%m_%d-%H_%M_%S") + ".png", "wb") as outf:
-                for chunk in r:
-                    outf.write(chunk)
-
-    except Exception as e:
-        print("failed to write image to file:", e)
-
-
 def main() -> None:
-    with open("data/" + datetime.now().strftime("%Y_%m_%d-%H_%M_%S") + ".txt", "w") as transf:
+    with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
         args = get_args()
 
         transcriber = AudioTranscriber(model=args.audio_model)
@@ -90,23 +80,15 @@ def main() -> None:
         server = ImageServer(host=args.server_host, port=args.server_port)
 
         def on_image_rendered(url: str) -> None:
-            save_image(url)
+            session_data.save_image(url)
             server.update_image(url)
 
         def on_text_transcribed(text: str) -> None:
-            try:
-                print(datetime.now(), ">", text)
-                print(datetime.now(), ">", text, file=transf, flush=True)
-            except Exception as e:
-                print("failed to write text to file:", e)
+            session_data.save_transcription(text)
             buffer.send(text)
 
         def on_summary_generated(text: str) -> None:
-            with open("data/" + datetime.now().strftime("%Y_%m_%d-%H_%M_%S_summary") + ".txt", "w") as summaryf:
-                try:
-                    print(datetime.now(), ">", text, file=summaryf)
-                except Exception as e:
-                    print("failed to write text to file:", e)
+            session_data.save_summary(text)
             renderer.send(text)
 
         Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()
