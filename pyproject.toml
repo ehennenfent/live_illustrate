@@ -1,13 +1,14 @@
 [project]
 name = "live_illustrate"
 version = "0.1.0"
-description = "Live illustration for your dnd campaign"
+description = "Live-ish illustration for your role-playing campaign"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
   {name = "Eric Hennenfent", email = "eric@hennenfent.com" }
 ]
+keywords = ["ttrpg", "dnd", "GenAI", "LLM", "diffusion", "art", "illustration"]
 
 # This field lists other packages that your project depends on to run.
 # Any package you put here will be installed by pip when your project is
@@ -42,7 +43,7 @@ dev = [
 ]
 
 [project.scripts]
-autodraw = "live_illustrate.__main__:main"
+illustrate = "live_illustrate.__main__:main"
 
 [build-system]
 requires = ["setuptools", "setuptools-scm"]

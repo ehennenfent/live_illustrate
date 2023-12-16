@@ -2,10 +2,10 @@
 ASR + LLM + Diffusion = ???
 
 This project:
-* Uses Whisper to transcribe live audio of a tabletop RPG session
-* Uses ChatGPT to extract a description of the current setting from the transcript
-* Uses Dall-e to draw the setting
-* Uses Flask & HTMX to display a new image every few minutes
+* Uses [Whisper](https://github.com/openai/whisper) to transcribe live audio of a tabletop RPG session
+* Uses [GPT-3.5](https://platform.openai.com/docs/guides/text-generation) to extract a description of the current setting from the transcript
+* Uses [DALL-E](https://platform.openai.com/docs/guides/images) to draw the setting
+* Uses [Flask](https://flask.palletsprojects.com) & [HTMX](https://htmx.org) to display a new image every few minutes
 
 And like most AI projects, it simultaneously works better and worse than one might expect. 
 The images generated are never a perfect rendition of what's going on, but are almost _too_ good to be just ambient background flavor.
@@ -29,8 +29,20 @@ Pay no attention to the faces of the other patrons.
 The party seeks further gossip at a luxe brothel called _The Rich Dagger_, guarded by a Goliath bouncer and famed for its perplexing architecture. 
 
 ## Installation
+I recommend installing in a [virtual environment](https://docs.python.org/3/library/venv.html). 
+
 ```
+# From PyPI:
+pip install live_illustrate
+
+# Or locally:
+git clone git@github.com:ehennenfent/live_illustrate.git
+cd live_illustrate
 pip install -e . 
+```
+
+Whisper will be _much_ faster if you use a cuda-enabled pytorch build. I recommend installing this manually afterwards.
+```
 pip install --index-url https://download.pytorch.org/whl/cu118 torch torchvision torchaudio  # https://pytorch.org/get-started/locally/
 ```
 
@@ -38,3 +50,17 @@ pip install --index-url https://download.pytorch.org/whl/cu118 torch torchvision
 
 With the default settings, it costs about $1/hour to run. You can lower the cost by reducing the size of the generated images, or 
 increasing the interval between them. 
+
+### Running
+Once installed, run the `illustrate` command line tool, which will automatically start recording with your default microphone.
+
+A few words about the most important command line options:
+* `--wait_minutes`: This controls how frequently the tool draws an image, which directly translates into how expensive it is
+to run. The default of 7.5 minutes seems to work well for our campaign.
+* `--max_context`: Each interval, the tool looks back at the transcript and collects up to `max_context` tokens to send to GPT3. 
+It will get as close as possible, so some of these tokens may come from _before_ the previous image was generated. GPT can be 
+a bit slow about summarizing large amounts of text, so be careful about making this too large. The default of 2000 tokens seems
+to correspond _very_ roughly to about ten minutes of conversation from one of our sessions, but YMMV. 
+* `--persistence_of_memory` When summarizing long conversations, the LLM can seem to get "stuck" on the first setting described.
+This argument controls what fraction of the previous context is retained each time an image is generated. The default setting of 0.2
+may lead to some discontinuity if your party is in one place for a long time. 
