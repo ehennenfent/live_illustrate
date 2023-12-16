@@ -23,11 +23,11 @@
             max-width: 100%;
             max-height: 100vh;
             margin: auto;
-            transition: opacity 3000ms ease-in;
+            transition: all 3999ms ease-in;
         }
     </style>
 </head>
 <body style='background-color: black;'>
-<div hx-get="/image" hx-trigger="load, every 7s" class="imgbox"></div>
+<div hx-get="/image/-1" hx-trigger="load, every 30s" class="imgbox" hx-swap="outerHTML transition:true"></div>
 </body>
 </html>
