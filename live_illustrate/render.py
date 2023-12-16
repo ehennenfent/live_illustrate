@@ -10,14 +10,14 @@ EXTRA = "digital painting, fantasy art"
 
 class ImageRenderer(AsyncThread):
     def __init__(self, model: str, image_size: str, image_quality: str, image_style: str) -> None:
-        super().__init__()
+        super().__init__("ImageRenderer")
         self.openai_client: OpenAI = OpenAI()
         self.model: str = model
         self.size: str = image_size
         self.image_quality: str = image_quality
         self.image_style: str = image_style
 
-    def work(self, text: str) -> str:
+    def work(self, text: str) -> str | None:
         """Sends the text to Dall-e, spits out an image URL"""
         start = datetime.now()
         rendered = self.openai_client.images.generate(
@@ -28,6 +28,5 @@ class ImageRenderer(AsyncThread):
             style=self.image_style,
             n=1,
         ).data[0]
-        # TODO: Mypy has reminded me that we are not handling API failures here
-        print("[INFO] Rendered in", datetime.now() - start)
+        self.logger.info("Rendered in %s", datetime.now() - start)
         return rendered.url

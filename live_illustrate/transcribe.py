@@ -12,7 +12,7 @@ SAMPLE_RATE = 16000
 
 class AudioTranscriber(AsyncThread):
     def __init__(self, model: str) -> None:
-        super().__init__()
+        super().__init__("AudioTranscriber")
 
         self.recorder = sr.Recognizer()
         self.source = sr.Microphone(sample_rate=SAMPLE_RATE)

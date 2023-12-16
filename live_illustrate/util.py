@@ -5,6 +5,7 @@ from queue import Queue
 from time import sleep
 
 import tiktoken
+import logging
 
 
 @lru_cache(maxsize=2)
@@ -26,14 +27,20 @@ def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
         context.append(line)
     return [c for c in reversed(context)]
 
+def is_transcription_interesting(transcription: str) -> bool:
+    """ Whisper likes to sometimes just output a series of dots and spaces, which are boring """
+    return len(transcription.replace(".", "").replace(" ", "").strip()) > 0
 
 class AsyncThread:
     """Generic thread that has a work queue and a callback to run on the result"""
 
     SLEEP_TIME = 0.25
+    MAX_ERRORS = 5
 
-    def __init__(self) -> None:
+    def __init__(self, logger_name="AsyncThread") -> None:
         self.queue: Queue[t.Any] = Queue()
+        self._consecutive_errors: int = 0
+        self.logger = logging.getLogger(logger_name)
 
     @abstractmethod
     def work(self, *args) -> t.Any:
@@ -42,7 +49,15 @@ class AsyncThread:
     def start(self, callback) -> None:
         while True:
             if not self.queue.empty():
-                callback(self.work(*self.queue.get()))
+                try:
+                    callback(self.work(*self.queue.get()))
+                    self._consecutive_errors = 0
+                except Exception as e:
+                    self._consecutive_errors += 1
+                    self.logger.error(e)
+                    if self._consecutive_errors > self.MAX_ERRORS:
+                        self.logger.critical(f"Abandoning execution after %d consecutive errors", self.MAX_ERRORS)
+                        exit(-1)
             sleep(self.SLEEP_TIME)
 
     def send(self, *args) -> None:

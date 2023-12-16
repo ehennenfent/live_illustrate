@@ -2,13 +2,15 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
+import logging
 
 
 class SessionData:
-    """Creates a data/<tunestano> folder for the session and stores images, summaries, and transcripts"""
+    """Creates a data/<timestamp> folder for the session and stores images, summaries, and transcripts"""
 
     def __init__(self, data_dir: Path, echo: bool = True) -> None:
         self.start_time = datetime.now()
+        self.logger = logging.getLogger("SessionData")
 
         self.data_dir: Path = data_dir.joinpath(self.start_time.strftime("%Y_%m_%d-%H_%M_%S"))
         self.echo: bool = echo
@@ -21,7 +23,7 @@ class SessionData:
                     for chunk in r:
                         outf.write(chunk)
         except Exception as e:
-            print("failed to save image to file:", e)
+            self.logger.error("failed to save image to file: %s", e)
 
     def save_summary(self, text: str):
         """saves the provided text to its own file"""
@@ -29,7 +31,7 @@ class SessionData:
             with open(self.data_dir.joinpath(f"{self._time_since}.txt"), "w") as summaryf:
                 print(text, file=summaryf)
         except Exception as e:
-            print("failed to write summary to file:", e)
+            self.logger.error("failed to write summary to file: %s", e)
 
     def save_transcription(self, text: str):
         """appends the provided text to the transcript file"""
@@ -39,7 +41,7 @@ class SessionData:
                     print(self._time_since, ">", text)
                 print(self._time_since, ">", text, file=transf, flush=True)
         except Exception as e:
-            print("failed to write transcript to file:", e)
+            self.logger.error("failed to write transcript to file: %s", e)
 
     @property
     def _time_since(self) -> str:

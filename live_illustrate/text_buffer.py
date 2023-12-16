@@ -7,7 +7,7 @@ from .util import AsyncThread, get_last_n_tokens, num_tokens_from_string
 
 class TextBuffer(AsyncThread):
     def __init__(self, wait_minutes: float, max_context: int, persistence: float = 1.0) -> None:
-        super().__init__()
+        super().__init__("TextBuffer")
         self.buffer: t.List[str] = []
         self.wait_seconds: int = int(wait_minutes * 60)
         self.max_context: int = max_context

@@ -3,6 +3,7 @@ from pathlib import Path
 from threading import Thread
 from time import sleep
 from webbrowser import open_new_tab
+import logging
 
 from dotenv import load_dotenv
 
@@ -12,6 +13,7 @@ from .session_data import SessionData
 from .summarize import TextSummarizer
 from .text_buffer import TextBuffer
 from .transcribe import AudioTranscriber
+from .util import is_transcription_interesting
 
 load_dotenv()
 
@@ -90,41 +92,56 @@ def get_args() -> argparse.Namespace:
         type=float,
         help="How much of the previous transcription to retain after generating each summary. 0 - 1.0",
     )
+    parser.add_argument(
+        "-v", "--verbose",
+        action="count",
+        default=0,
+    )
     return parser.parse_args()
 
 
 def main() -> None:
-    with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
-        args = get_args()
+    args = get_args()
+    logging.basicConfig(format="%(name)s: %(message)s", level=logging.DEBUG if args.verbose > 0 else logging.INFO)
 
-        # create each of our thread objects with the apppropriate command line args
-        transcriber = AudioTranscriber(model=args.audio_model)
-        buffer = TextBuffer(
-            wait_minutes=args.wait_minutes, max_context=args.max_context, persistence=args.persistence_of_memory
-        )
-        summarizer = TextSummarizer(model=args.summarize_model)
-        renderer = ImageRenderer(
-            model=args.image_model,
-            image_size=args.image_size,
-            image_quality=args.image_quality,
-            image_style=args.image_style,
-        )
-        server = ImageServer(
-            host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
-        )
+    # tweak loggers for client libraries
+    logging.getLogger("httpx").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # used by OpenAI
+    logging.getLogger("requests").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)
+    logging.getLogger("werkzeug").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # flask
+
+    # create each of our thread objects with the apppropriate command line args
+    transcriber = AudioTranscriber(model=args.audio_model)
+    buffer = TextBuffer(
+        wait_minutes=args.wait_minutes, max_context=args.max_context, persistence=args.persistence_of_memory
+    )
+    summarizer = TextSummarizer(model=args.summarize_model)
+    renderer = ImageRenderer(
+        model=args.image_model,
+        image_size=args.image_size,
+        image_quality=args.image_quality,
+        image_style=args.image_style,
+    )
+    server = ImageServer(
+        host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
+    )
+    
+    with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
 
         # wire up some callbacks to save the intermediate data and forward it along
         def on_text_transcribed(text: str) -> None:
-            session_data.save_transcription(text)
-            buffer.send(text)
+            if is_transcription_interesting(text):
+                session_data.save_transcription(text)
+                buffer.send(text)
 
-        def on_summary_generated(text: str) -> None:
-            session_data.save_summary(text)
-            renderer.send(text)
+        def on_summary_generated(text: str | None) -> None:
+            if text:
+                session_data.save_summary(text)
+                renderer.send(text)
 
-        def on_image_rendered(url: str) -> None:
-            session_data.save_image(url)
-            server.update_image(url)
+        def on_image_rendered(url: str | None) -> None:
+            if url:
+                session_data.save_image(url)
+                server.update_image(url)
 
         # start each thread with the appropriate callback
         Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()

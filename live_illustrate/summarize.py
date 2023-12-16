@@ -13,11 +13,11 @@ Remember to be concise and not include details that cannot be seen."  # Not so g
 
 class TextSummarizer(AsyncThread):
     def __init__(self, model: str) -> None:
-        super().__init__()
+        super().__init__("TextSummarizer")
         self.openai_client: OpenAI = OpenAI()
         self.model: str = model
 
-    def work(self, text: str) -> str:
+    def work(self, text: str) -> str | None:
         """Sends the big buffer of provided text to ChatGPT, returns bullets describing the setting"""
         start = datetime.now()
         response = self.openai_client.chat.completions.create(
@@ -27,6 +27,6 @@ class TextSummarizer(AsyncThread):
                 {"role": "user", "content": text},
             ],
         )
-        print("[INFO] Summarized", num_tokens_from_string(text), "tokens in", datetime.now() - start)
-        # TODO: Mypy has reminded me that we are not handling API failures here
-        return [choice.message.content.strip() for choice in response.choices][-1]
+        self.logger.info("Summarized %d tokens in %s", num_tokens_from_string(text), datetime.now() - start)
+        if response.choices:
+            return [content.strip() if (content:=choice.message.content) else None for choice in response.choices][-1]

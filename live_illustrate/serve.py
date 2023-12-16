@@ -3,10 +3,6 @@ import typing as t
 
 from flask import Flask, Response, send_from_directory
 
-# silence the logging for every single request
-log = logging.getLogger("werkzeug")
-log.setLevel(logging.ERROR)
-
 IMAGE_HTML = """<div hx-get="/image/{index}" hx-trigger="every 5s" hx-swap="outerHTML transition:true" class="imgbox"><img src='{image_url}' class='center-fit'/></div>"""
 
 
