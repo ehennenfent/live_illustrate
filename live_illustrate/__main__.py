@@ -51,6 +51,12 @@ def get_args() -> argparse.Namespace:
         choices=["dall-e-3"],
     )
     parser.add_argument(
+        "--image_size",
+        default="1792x1024",
+        help="Size of image to render (smaller is cheaper)",
+        choices=["1792x1024", "1024x1024"],
+    )
+    parser.add_argument(
         "--server_host",
         default="0.0.0.0",
         help="Address to bind web server",
@@ -76,7 +82,7 @@ def main() -> None:
         transcriber = AudioTranscriber(model=args.audio_model)
         buffer = TextBuffer(wait_minutes=args.wait_minutes, max_context=args.max_context)
         summarizer = TextSummarizer(model=args.summarize_model)
-        renderer = ImageRenderer(model=args.image_model)
+        renderer = ImageRenderer(model=args.image_model, image_size=args.image_size)
         server = ImageServer(host=args.server_host, port=args.server_port)
 
         def on_image_rendered(url: str) -> None:
@@ -94,6 +100,7 @@ def main() -> None:
         Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()
         Thread(target=summarizer.start, args=(on_summary_generated,), daemon=True).start()
         Thread(target=renderer.start, args=(on_image_rendered,), daemon=True).start()
+        Thread(target=buffer.start, args=(lambda _len: None,), daemon=True).start()
         Thread(target=buffer.buffer_forever, args=(summarizer.send,), daemon=True).start()
 
         if args.open:

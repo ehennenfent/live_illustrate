@@ -13,18 +13,21 @@ class TextBuffer(AsyncThread):
         self.wait_seconds: int = int(wait_minutes * 60)
         self.max_context: int = max_context
 
-    def work(self, next_text: str) -> None:
+    def work(self, next_text: str) -> int:
         self.buffer.append(next_text)
+        return len(self.buffer)
 
     def get_last_n_tokens(self, n: int) -> str:
         if not self.buffer:
             return ""
         my_copy = deque(self.buffer)
         context = [my_copy.pop()]
-        while (num_tokens_from_string("\n".join(context))) < self.max_context:
+        while num_tokens_from_string("\n".join(context)) < self.max_context:
             if not my_copy:
                 break
             context.append(my_copy.pop())
+        if len(context) == 1:
+            return context[0]
         return "\n".join(reversed(context[:-1]))
 
     def buffer_forever(self, callback: t.Callable[[str], t.Any]) -> None:
