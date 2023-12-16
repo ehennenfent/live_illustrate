@@ -1,4 +1,3 @@
-import logging
 import typing as t
 
 from flask import Flask, Response, send_from_directory
@@ -24,12 +23,8 @@ class ImageServer:
     def serve_image_tag(self, index: str) -> str:
         """Sneaky image handler that counts up by index until we get to the most recent image,
         using HTMX to re-request the endpoint every few seconds."""
-        if not index.isdigit():
-            index = -1
-        index = int(index)
-        if index not in range(len(self.images)):
-            index = -1
-        next_index = min(index + 1, len(self.images) - 1)
+        my_index: int = int(index) if index.isdigit() else -1
+        next_index: int = min(max(0, my_index + 1), len(self.images) - 1)
         return IMAGE_HTML.format(index=next_index, image_url=self.images[next_index])
 
     def start(self) -> None:

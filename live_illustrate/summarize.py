@@ -29,4 +29,5 @@ class TextSummarizer(AsyncThread):
         )
         self.logger.info("Summarized %d tokens in %s", num_tokens_from_string(text), datetime.now() - start)
         if response.choices:
-            return [content.strip() if (content:=choice.message.content) else None for choice in response.choices][-1]
+            return [content.strip() if (content := choice.message.content) else None for choice in response.choices][-1]
+        return None

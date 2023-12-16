@@ -1,9 +1,9 @@
 import argparse
+import logging
 from pathlib import Path
 from threading import Thread
 from time import sleep
 from webbrowser import open_new_tab
-import logging
 
 from dotenv import load_dotenv
 
@@ -93,7 +93,8 @@ def get_args() -> argparse.Namespace:
         help="How much of the previous transcription to retain after generating each summary. 0 - 1.0",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="count",
         default=0,
     )
@@ -124,9 +125,8 @@ def main() -> None:
     server = ImageServer(
         host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
     )
-    
-    with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
 
+    with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
         # wire up some callbacks to save the intermediate data and forward it along
         def on_text_transcribed(text: str) -> None:
             if is_transcription_interesting(text):

@@ -1,6 +1,6 @@
 import typing as t
 
-import speech_recognition as sr
+import speech_recognition as sr  # type: ignore
 
 from .util import AsyncThread
 

@@ -1,8 +1,8 @@
+import logging
 from datetime import datetime
 from pathlib import Path
 
 import requests
-import logging
 
 
 class SessionData:
@@ -25,7 +25,7 @@ class SessionData:
         except Exception as e:
             self.logger.error("failed to save image to file: %s", e)
 
-    def save_summary(self, text: str):
+    def save_summary(self, text: str) -> None:
         """saves the provided text to its own file"""
         try:
             with open(self.data_dir.joinpath(f"{self._time_since}.txt"), "w") as summaryf:
@@ -33,7 +33,7 @@ class SessionData:
         except Exception as e:
             self.logger.error("failed to write summary to file: %s", e)
 
-    def save_transcription(self, text: str):
+    def save_transcription(self, text: str) -> None:
         """appends the provided text to the transcript file"""
         try:
             with open(self.data_dir.joinpath("transcript.txt"), "a") as transf:

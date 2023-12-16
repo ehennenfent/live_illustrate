@@ -23,9 +23,9 @@ class ImageRenderer(AsyncThread):
         rendered = self.openai_client.images.generate(
             model=self.model,
             prompt=text + "\n" + EXTRA,
-            size=self.size,
-            quality=self.image_quality,
-            style=self.image_style,
+            size=self.size,  # type: ignore[arg-type]
+            quality=self.image_quality,  # type: ignore[arg-type]
+            style=self.image_style,  # type: ignore[arg-type]
             n=1,
         ).data[0]
         self.logger.info("Rendered in %s", datetime.now() - start)
