@@ -1,0 +1,60 @@
+[project]
+name = "live_illustrate"
+version = "0.1.0"
+description = "Live illustration for your dnd campaign"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Eric Hennenfent", email = "eric@hennenfent.com" }
+]
+
+# This field lists other packages that your project depends on to run.
+# Any package you put here will be installed by pip when your project is
+# installed, so they must be valid existing projects.
+#
+# For an analysis of this field vs pip's requirements files see:
+# https://packaging.python.org/discussions/install-requires-vs-requirements/
+dependencies = [
+    "pyaudio",
+    "openai",
+    "openai-whisper",
+    "SpeechRecognition",
+    "soundfile",
+    "tiktoken",
+    "requests",
+    "flask",
+    "python-dotenv",
+
+    # Using --index-url https://download.pytorch.org/whl/cu118
+    "torch",
+    "torchvision",
+    "torchaudio",
+]
+
+[project.optional-dependencies] # Optional
+dev = [
+    "black", 
+    "isort", 
+    "mypy",
+    "ruff",
+]
+
+[project.scripts]
+autodraw = "live_illustrate.__main__:main"
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+
+[tool.setuptools]
+py-modules = ["live_illustrate"]
