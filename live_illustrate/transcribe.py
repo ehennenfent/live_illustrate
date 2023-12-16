@@ -18,12 +18,12 @@ class AudioTranscriber(AsyncThread):
 
         self.recorder.dynamic_energy_threshold = DYNAMIC_ENERGY_THRESHOLD
 
-    def work(self, audio_data) -> str:
+    def work(self, _, audio_data) -> str:
         return self.recorder.recognize_whisper(audio_data, model=self.model).strip()
 
     def start(self, callback: t.Callable[[str], None]) -> None:
         with self.source:
             self.recorder.adjust_for_ambient_noise(self.source)
-            self.recorder.listen_in_background(self.source, self.send)
+        self.recorder.listen_in_background(self.source, self.send)
 
         super().start(callback)
