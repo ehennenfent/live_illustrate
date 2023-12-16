@@ -1,3 +1,4 @@
+from datetime import datetime
 from openai import OpenAI
 
 from .util import AsyncThread
@@ -16,6 +17,7 @@ class TextSummarizer(AsyncThread):
         self.model: str = model
 
     def work(self, text: str) -> str:
+        start = datetime.now()
         response = self.openai_client.chat.completions.create(
             model=self.model,
             messages=[
@@ -23,4 +25,5 @@ class TextSummarizer(AsyncThread):
                 {"role": "user", "content": text},
             ],
         )
+        print("[INFO] Summarized in", datetime.now() - start)
         return [choice.message.content.strip() for choice in response.choices][-1]

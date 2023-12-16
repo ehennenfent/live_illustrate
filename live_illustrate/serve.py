@@ -1,5 +1,8 @@
 from flask import Flask, Response, send_from_directory
 
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 class ImageServer:
     image_url: str = "https://placehold.co/1792x1024/png"

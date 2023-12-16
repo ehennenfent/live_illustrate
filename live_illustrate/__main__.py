@@ -34,7 +34,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--max_context",
-        default=4000,
+        default=2000,
         type=int,
         help="Maximum number of tokens to summarize from the conversations",
     )
