@@ -8,7 +8,7 @@ This project:
 * Uses [Flask](https://flask.palletsprojects.com) & [HTMX](https://htmx.org) to display a new image every few minutes
 
 And like most AI projects, it simultaneously works better and worse than one might expect. 
-The images generated are never a perfect rendition of what's going on, but are almost _too_ good to be just ambient background flavor.
+The images generated are usually an amusingly flawed rendition of what's going on, but are almost _too_ good to be just ambient background flavor.
 
 ## Demo Reel
 
@@ -33,12 +33,12 @@ I recommend installing in a [virtual environment](https://docs.python.org/3/libr
 
 ```
 # From PyPI:
-pip install live_illustrate
+pip install live-illustrate
 
-# Or locally:
+# Or for hacking:
 git clone git@github.com:ehennenfent/live_illustrate.git
 cd live_illustrate
-pip install -e . 
+pip install -e ".[dev]"
 ```
 
 Whisper will be _much_ faster if you use a cuda-enabled pytorch build. I recommend installing this manually afterwards.
