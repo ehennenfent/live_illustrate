@@ -53,6 +53,7 @@ increasing the interval between them.
 
 ### Running
 Once installed, run the `illustrate` command line tool, which will automatically start recording with your default microphone.
+A `data\` directory will be created containing the generated images and transcripts, and a web server will start on `localhost:8080` to display the generated images. 
 
 A few words about the most important command line options:
 * `--wait_minutes`: This controls how frequently the tool draws an image, which directly translates into how expensive it is
