@@ -5,8 +5,8 @@ from openai import OpenAI
 
 from .util import AsyncThread, Image, Summary
 
-# Hacky, but an easy way to get slightly more consistent results
-EXTRA: t.List[str] = ["digital painting, fantasy art"]
+# Prompt engineering level 1,000,000
+EXTRA: t.List[str] = ["There is no text in the image.", "digital painting, fantasy art"]
 
 
 class ImageRenderer(AsyncThread):
@@ -21,10 +21,9 @@ class ImageRenderer(AsyncThread):
     def work(self, summary: Summary) -> Image | None:
         """Sends the text to Dall-e, spits out an image URL"""
         start = datetime.now()
-        text = summary.summary
         rendered = self.openai_client.images.generate(
             model=self.model,
-            prompt="\n".join((text, *EXTRA)),
+            prompt="\n".join((summary.summary, *EXTRA)),
             size=self.size,  # type: ignore[arg-type]
             quality=self.image_quality,  # type: ignore[arg-type]
             style=self.image_style,  # type: ignore[arg-type]
