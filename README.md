@@ -65,3 +65,5 @@ to correspond _very_ roughly to about ten minutes of conversation from one of ou
 * `--persistence_of_memory` When summarizing long conversations, the LLM can seem to get "stuck" on the first setting described.
 This argument controls what fraction of the previous context is retained each time an image is generated. The default setting of 0.2
 may lead to some discontinuity if your party is in one place for a long time. 
+
+Optionally, it's possible to upload generated images to a Discord server automatically by configuring a [Discord webhook](https://support.discord.com/hc/en-us/articles/228383668) and supplying the URL in the `DISCORD_WEBHOOK` environment variable.
