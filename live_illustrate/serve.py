@@ -2,6 +2,8 @@ import typing as t
 
 from flask import Flask, Response, send_from_directory
 
+from .util import Image
+
 IMAGE_HTML = """<div hx-get="/image/{index}" hx-trigger="every 5s" hx-swap="outerHTML transition:true" class="imgbox"><img src='{image_url}' class='center-fit'/></div>"""
 
 
@@ -30,5 +32,5 @@ class ImageServer:
     def start(self) -> None:
         self.app.run(host=self.host, port=self.port)
 
-    def update_image(self, image_url: str) -> None:
-        self.images.append(image_url)
+    def update_image(self, image: Image) -> None:
+        self.images.append(image.image_url)

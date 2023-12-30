@@ -1,11 +1,35 @@
 import logging
 import typing as t
 from abc import abstractmethod
+from dataclasses import dataclass
 from functools import lru_cache
 from queue import Queue
 from time import sleep
 
 import tiktoken
+
+
+@dataclass
+class Transcription:
+    transcription: str
+
+
+@dataclass
+class Summary(Transcription):
+    summary: str
+
+    @classmethod
+    def from_transcription(cls, transcription: Transcription, summary: str) -> "Summary":
+        return cls(transcription.transcription, summary)
+
+
+@dataclass
+class Image(Summary):
+    image_url: str
+
+    @classmethod
+    def from_summary(cls, summary: Summary, image_url: str) -> "Image":
+        return cls(summary.transcription, summary.summary, image_url)
 
 
 @lru_cache(maxsize=2)
@@ -28,9 +52,9 @@ def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
     return [c for c in reversed(context)]
 
 
-def is_transcription_interesting(transcription: str) -> bool:
+def is_transcription_interesting(transcription: Transcription) -> bool:
     """Whisper likes to sometimes just output a series of dots and spaces, which are boring"""
-    return len(transcription.replace(".", "").replace(" ", "").strip()) > 0
+    return len(transcription.transcription.replace(".", "").replace(" ", "").strip()) > 0
 
 
 class AsyncThread:
