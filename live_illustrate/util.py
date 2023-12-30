@@ -8,6 +8,11 @@ from time import sleep
 
 import tiktoken
 
+# Whisper's favorite phrase is "thank you", followed closely by "thanks for watching!".
+# We might miss legit transcriptions this way, but the frequency with which these phrases show up
+# without other dialogue is very low compared to the frequency with which whisper imagines them.
+TRANSCRIPTION_HALLUCINATIONS = ["Thank you.", "Thanks for watching!"]
+
 
 @dataclass
 class Transcription:
@@ -53,8 +58,18 @@ def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
 
 
 def is_transcription_interesting(transcription: Transcription) -> bool:
-    """Whisper likes to sometimes just output a series of dots and spaces, which are boring"""
-    return len(transcription.transcription.replace(".", "").replace(" ", "").strip()) > 0
+    """If Whisper doesn't hear anything, it will sometimes emit predicatble nonsense."""
+
+    # Sometimes we just get a sequnece of dots and spaces.
+    is_not_empty = len(transcription.transcription.replace(".", "").replace(" ", "").strip()) > 0
+
+    # Sometimes we get a phrase from TRANSCRIPTION_HALLUCINATIONS (see above)
+    is_not_hallucination = all(
+        len(transcription.transcription.replace(maybe_hallucination, "").replace(" ", "").strip()) > 0
+        for maybe_hallucination in TRANSCRIPTION_HALLUCINATIONS
+    )
+
+    return is_not_empty and is_not_hallucination
 
 
 class AsyncThread:

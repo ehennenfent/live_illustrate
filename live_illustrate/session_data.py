@@ -22,6 +22,8 @@ class SessionData:
         self.echo: bool = echo
 
         self.discord_webhook: str | None = os.getenv(DISCORD_WEBHOOK)
+        if self.discord_webhook is not None:
+            self.logger.info("Discord upload is enabled")
 
     def save_image(self, image: Image) -> None:
         try:
