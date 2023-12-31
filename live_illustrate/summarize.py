@@ -20,6 +20,10 @@ class TextSummarizer(AsyncThread):
     def work(self, transcription: Transcription) -> Summary | None:
         """Sends the big buffer of provided text to ChatGPT, returns bullets describing the setting"""
         text = transcription.transcription
+        if (token_count := num_tokens_from_string(text)) == 0:
+            self.logger.info("No tokens in transcription, skipping summarization")
+            return None
+
         start = datetime.now()
         response = self.openai_client.chat.completions.create(
             model=self.model,
@@ -28,7 +32,7 @@ class TextSummarizer(AsyncThread):
                 {"role": "user", "content": text},
             ],
         )
-        self.logger.info("Summarized %d tokens in %s", num_tokens_from_string(text), datetime.now() - start)
+        self.logger.info("Summarized %d tokens in %s", token_count, datetime.now() - start)
         if response.choices:
             return [
                 Summary.from_transcription(transcription, content.strip())

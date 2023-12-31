@@ -131,7 +131,7 @@ def main() -> None:
         def on_text_transcribed(transcription: Transcription) -> None:
             if is_transcription_interesting(transcription):
                 session_data.save_transcription(transcription)
-                buffer.send(transcription.transcription)
+                buffer.send(transcription)
 
         def on_summary_generated(summary: Summary | None) -> None:
             if summary:

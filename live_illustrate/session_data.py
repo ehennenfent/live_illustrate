@@ -40,7 +40,7 @@ class SessionData:
                 if self.discord_webhook is not None:
                     with open(fname, "rb") as image_file:
                         SyncWebhook.from_url(self.discord_webhook).send(
-                            file=File(image_file, description=image.summary)
+                            file=File(image_file, description=image.summary[:1023])
                         )
             except Exception as e:
                 self.logger.error("failed to send image to discord: %s", e)
