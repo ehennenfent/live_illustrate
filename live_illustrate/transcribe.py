@@ -2,7 +2,7 @@ import typing as t
 
 import speech_recognition as sr  # type: ignore
 
-from .util import AsyncThread
+from .util import AsyncThread, Transcription
 
 # TODO - might want to figure out how to lower the pause detection threshold.
 # Our party talks a lot.
@@ -20,9 +20,9 @@ class AudioTranscriber(AsyncThread):
 
         self.recorder.dynamic_energy_threshold = DYNAMIC_ENERGY_THRESHOLD
 
-    def work(self, _, audio_data) -> str:
+    def work(self, _, audio_data) -> Transcription:
         """Passes audio data to whisper, spits text back out"""
-        return self.recorder.recognize_whisper(audio_data, model=self.model).strip()
+        return Transcription(self.recorder.recognize_whisper(audio_data, model=self.model).strip())
 
     def start(self, callback: t.Callable[[str], None]) -> None:
         with self.source:

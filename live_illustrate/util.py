@@ -1,11 +1,40 @@
 import logging
 import typing as t
 from abc import abstractmethod
+from dataclasses import dataclass
 from functools import lru_cache
 from queue import Queue
 from time import sleep
 
 import tiktoken
+
+# Whisper's favorite phrase is "thank you", followed closely by "thanks for watching!".
+# We might miss legit transcriptions this way, but the frequency with which these phrases show up
+# without other dialogue is very low compared to the frequency with which whisper imagines them.
+TRANSCRIPTION_HALLUCINATIONS = ["Thank you.", "Thanks for watching!"]
+
+
+@dataclass
+class Transcription:
+    transcription: str
+
+
+@dataclass
+class Summary(Transcription):
+    summary: str
+
+    @classmethod
+    def from_transcription(cls, transcription: Transcription, summary: str) -> "Summary":
+        return cls(transcription.transcription, summary)
+
+
+@dataclass
+class Image(Summary):
+    image_url: str
+
+    @classmethod
+    def from_summary(cls, summary: Summary, image_url: str) -> "Image":
+        return cls(summary.transcription, summary.summary, image_url)
 
 
 @lru_cache(maxsize=2)
@@ -28,9 +57,19 @@ def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
     return [c for c in reversed(context)]
 
 
-def is_transcription_interesting(transcription: str) -> bool:
-    """Whisper likes to sometimes just output a series of dots and spaces, which are boring"""
-    return len(transcription.replace(".", "").replace(" ", "").strip()) > 0
+def is_transcription_interesting(transcription: Transcription) -> bool:
+    """If Whisper doesn't hear anything, it will sometimes emit predicatble nonsense."""
+
+    # Sometimes we just get a sequnece of dots and spaces.
+    is_not_empty = len(transcription.transcription.replace(".", "").replace(" ", "").strip()) > 0
+
+    # Sometimes we get a phrase from TRANSCRIPTION_HALLUCINATIONS (see above)
+    is_not_hallucination = all(
+        len(transcription.transcription.replace(maybe_hallucination, "").replace(" ", "").strip()) > 0
+        for maybe_hallucination in TRANSCRIPTION_HALLUCINATIONS
+    )
+
+    return is_not_empty and is_not_hallucination
 
 
 class AsyncThread:

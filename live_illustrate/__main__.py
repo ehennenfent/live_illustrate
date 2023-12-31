@@ -13,7 +13,7 @@ from .session_data import SessionData
 from .summarize import TextSummarizer
 from .text_buffer import TextBuffer
 from .transcribe import AudioTranscriber
-from .util import is_transcription_interesting
+from .util import Image, Summary, Transcription, is_transcription_interesting
 
 load_dotenv()
 
@@ -128,20 +128,20 @@ def main() -> None:
 
     with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
         # wire up some callbacks to save the intermediate data and forward it along
-        def on_text_transcribed(text: str) -> None:
-            if is_transcription_interesting(text):
-                session_data.save_transcription(text)
-                buffer.send(text)
+        def on_text_transcribed(transcription: Transcription) -> None:
+            if is_transcription_interesting(transcription):
+                session_data.save_transcription(transcription)
+                buffer.send(transcription)
 
-        def on_summary_generated(text: str | None) -> None:
-            if text:
-                session_data.save_summary(text)
-                renderer.send(text)
+        def on_summary_generated(summary: Summary | None) -> None:
+            if summary:
+                session_data.save_summary(summary)
+                renderer.send(summary)
 
-        def on_image_rendered(url: str | None) -> None:
-            if url:
-                session_data.save_image(url)
-                server.update_image(url)
+        def on_image_rendered(image: Image | None) -> None:
+            if image:
+                server.update_image(image)
+                session_data.save_image(image)
 
         # start each thread with the appropriate callback
         Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()

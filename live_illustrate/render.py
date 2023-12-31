@@ -1,11 +1,12 @@
+import typing as t
 from datetime import datetime
 
 from openai import OpenAI
 
-from .util import AsyncThread
+from .util import AsyncThread, Image, Summary
 
-# Hacky, but an easy way to get slightly more consistent results
-EXTRA = "digital painting, fantasy art"
+# Prompt engineering level 1,000,000
+EXTRA: t.List[str] = ["There is no text in the image.", "digital painting, fantasy art"]
 
 
 class ImageRenderer(AsyncThread):
@@ -17,16 +18,16 @@ class ImageRenderer(AsyncThread):
         self.image_quality: str = image_quality
         self.image_style: str = image_style
 
-    def work(self, text: str) -> str | None:
+    def work(self, summary: Summary) -> Image | None:
         """Sends the text to Dall-e, spits out an image URL"""
         start = datetime.now()
         rendered = self.openai_client.images.generate(
             model=self.model,
-            prompt=text + "\n" + EXTRA,
+            prompt="\n".join((summary.summary, *EXTRA)),
             size=self.size,  # type: ignore[arg-type]
             quality=self.image_quality,  # type: ignore[arg-type]
             style=self.image_style,  # type: ignore[arg-type]
             n=1,
         ).data[0]
         self.logger.info("Rendered in %s", datetime.now() - start)
-        return rendered.url
+        return Image.from_summary(summary, rendered.url) if rendered.url is not None else None

@@ -1,8 +1,14 @@
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 
 import requests
+from discord import File, SyncWebhook
+
+from .util import Image, Summary, Transcription
+
+DISCORD_WEBHOOK = "DISCORD_WEBHOOK"
 
 
 class SessionData:
@@ -15,31 +21,45 @@ class SessionData:
         self.data_dir: Path = data_dir.joinpath(self.start_time.strftime("%Y_%m_%d-%H_%M_%S"))
         self.echo: bool = echo
 
-    def save_image(self, url: str) -> None:
+        self.discord_webhook: str | None = os.getenv(DISCORD_WEBHOOK)
+        if self.discord_webhook is not None:
+            self.logger.info("Discord upload is enabled")
+
+    def save_image(self, image: Image) -> None:
         try:
-            r = requests.get((url), stream=True)
+            r = requests.get((image.image_url), stream=True)
             if r.status_code == 200:
-                with open(self.data_dir.joinpath(f"{self._time_since}.png"), "wb") as outf:
+                fname = self.data_dir.joinpath(f"{self._time_since}.png")
+                with open(fname, "wb") as outf:
                     for chunk in r:
                         outf.write(chunk)
         except Exception as e:
             self.logger.error("failed to save image to file: %s", e)
+        else:
+            try:
+                if self.discord_webhook is not None:
+                    with open(fname, "rb") as image_file:
+                        SyncWebhook.from_url(self.discord_webhook).send(
+                            file=File(image_file, description=image.summary[:1023])
+                        )
+            except Exception as e:
+                self.logger.error("failed to send image to discord: %s", e)
 
-    def save_summary(self, text: str) -> None:
+    def save_summary(self, summary: Summary) -> None:
         """saves the provided text to its own file"""
         try:
             with open(self.data_dir.joinpath(f"{self._time_since}.txt"), "w") as summaryf:
-                print(text, file=summaryf)
+                print(summary.summary, file=summaryf)
         except Exception as e:
             self.logger.error("failed to write summary to file: %s", e)
 
-    def save_transcription(self, text: str) -> None:
+    def save_transcription(self, transcription: Transcription) -> None:
         """appends the provided text to the transcript file"""
         try:
             with open(self.data_dir.joinpath("transcript.txt"), "a") as transf:
                 if self.echo:
-                    print(self._time_since, ">", text)
-                print(self._time_since, ">", text, file=transf, flush=True)
+                    print(self._time_since, ">", transcription.transcription)
+                print(self._time_since, ">", transcription.transcription, file=transf, flush=True)
         except Exception as e:
             self.logger.error("failed to write transcript to file: %s", e)
 
