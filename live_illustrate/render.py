@@ -6,7 +6,7 @@ from openai import OpenAI
 from .util import AsyncThread, Image, Summary
 
 # Prompt engineering level 1,000,000
-EXTRA: t.List[str] = ["There is no text in the image.", "digital painting, fantasy art"]
+EXTRA: t.List[str] = ["digital painting, fantasy art"]
 
 
 class ImageRenderer(AsyncThread):
