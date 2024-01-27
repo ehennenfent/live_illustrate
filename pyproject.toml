@@ -36,7 +36,7 @@ dependencies = [
 
 [project.optional-dependencies] # Optional
 dev = [
-    "black", 
+    "black>=24.0,<25.0", 
     "isort", 
     "mypy",
     "ruff",
