@@ -27,9 +27,9 @@ jobs:
         sudo apt install portaudio19-dev
         pip install .[dev]
     - name: Lint imports
-      run: isort .
+      run: isort --check .
     - name: Lint formatting
-      run: black .
+      run: black --check .
     - name: Lint semantics
       run: ruff .
     - name: Lint types

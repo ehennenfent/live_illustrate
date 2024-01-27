@@ -35,6 +35,13 @@ def get_args() -> argparse.Namespace:
         help="How frequently to summarize the conversation and generate an image",
     )
     parser.add_argument(
+        "--phrase_timeout",
+        default=0.75,
+        type=float,
+        help="Period of time after which to force transcription, even without a pause. "
+        "Specified as a fraction of wait_minutes",
+    )
+    parser.add_argument(
         "--max_context",
         default=2000,  # very roughly ten minutes or so?
         type=int,
@@ -111,7 +118,7 @@ def main() -> None:
     logging.getLogger("werkzeug").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # flask
 
     # create each of our thread objects with the apppropriate command line args
-    transcriber = AudioTranscriber(model=args.audio_model)
+    transcriber = AudioTranscriber(model=args.audio_model, phrase_timeout=args.wait_minutes * args.phrase_timeout)
     buffer = TextBuffer(
         wait_minutes=args.wait_minutes, max_context=args.max_context, persistence=args.persistence_of_memory
     )

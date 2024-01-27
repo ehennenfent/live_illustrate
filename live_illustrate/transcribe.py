@@ -11,12 +11,13 @@ SAMPLE_RATE = 16000
 
 
 class AudioTranscriber(AsyncThread):
-    def __init__(self, model: str) -> None:
+    def __init__(self, model: str, phrase_timeout: float) -> None:
         super().__init__("AudioTranscriber")
 
         self.recorder = sr.Recognizer()
         self.source = sr.Microphone(sample_rate=SAMPLE_RATE)
         self.model = model
+        self.phrase_timeout = int(phrase_timeout * 60)
 
         self.recorder.dynamic_energy_threshold = DYNAMIC_ENERGY_THRESHOLD
 
@@ -29,6 +30,6 @@ class AudioTranscriber(AsyncThread):
             self.recorder.adjust_for_ambient_noise(self.source)
         # This creates a separate thread for the audio recording,
         # but it's non-blocking, so we just let it live here
-        self.recorder.listen_in_background(self.source, self.send)
+        self.recorder.listen_in_background(self.source, self.send, phrase_time_limit=self.phrase_timeout)
 
         super().start(callback)
