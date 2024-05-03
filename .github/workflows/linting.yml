@@ -31,6 +31,6 @@ jobs:
     - name: Lint formatting
       run: black --check .
     - name: Lint semantics
-      run: ruff .
+      run: ruff check .
     - name: Lint types
       run: mypy .

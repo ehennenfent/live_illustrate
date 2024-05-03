@@ -1,4 +1,3 @@
-import typing as t
 from datetime import datetime
 
 from openai import OpenAI
