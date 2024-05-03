@@ -2,7 +2,7 @@ from datetime import datetime
 
 from openai import OpenAI
 
-from .prompts import PromptManager, SUMMARY
+from .prompts import SUMMARY, PromptManager
 from .util import AsyncThread, Summary, Transcription, num_tokens_from_string
 
 

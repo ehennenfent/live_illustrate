@@ -3,7 +3,7 @@ from datetime import datetime
 
 from openai import OpenAI
 
-from .prompts import PromptManager, IMAGE_EXTENSION
+from .prompts import IMAGE_EXTENSION, PromptManager
 from .util import AsyncThread, Image, Summary
 
 

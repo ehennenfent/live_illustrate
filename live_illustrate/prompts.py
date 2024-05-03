@@ -1,5 +1,5 @@
-from pathlib import Path
 import typing as t
+from pathlib import Path
 
 PROMPTS_FOLDER = Path(__file__).parent.joinpath("prompts")
 IMAGE_EXTENSION = PROMPTS_FOLDER.joinpath("image_extra.txt")
