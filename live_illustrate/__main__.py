@@ -66,45 +66,21 @@ def get_args() -> argparse.Namespace:
         choices=["1792x1024", "1024x1792", "1024x1024", "512x512", "256x256"],
     )
     parser.add_argument(
-        "--image_quality",
-        default="standard",
-        help="How fancy of an image to render",
-        choices=["standard", "hd"],
+        "--image_quality", default="standard", help="How fancy of an image to render", choices=["standard", "hd"]
     )
     parser.add_argument(
-        "--image_style",
-        default="vivid",
-        help="How stylized of an image to render",
-        choices=["vivid", "natural"],
+        "--image_style", default="vivid", help="How stylized of an image to render", choices=["vivid", "natural"]
     )
-    parser.add_argument(
-        "--server_host",
-        default="0.0.0.0",
-        help="Address to bind web server",
-    )
-    parser.add_argument(
-        "--server_port",
-        default=8080,
-        type=int,
-        help="Port to serve HTML viewer on",
-    )
-    parser.add_argument(
-        "--open",
-        action="store_true",
-        help="Automatically open a browser tab for the rendered images",
-    )
+    parser.add_argument("--server_host", default="0.0.0.0", help="Address to bind web server")
+    parser.add_argument("--server_port", default=8080, type=int, help="Port to serve HTML viewer on")
+    parser.add_argument("--open", action="store_true", help="Automatically open a browser tab for the rendered images")
     parser.add_argument(
         "--persistence_of_memory",
         default=0.2,  # Expressed as a fraction of the total buffered transcription
         type=float,
         help="How much of the previous transcription to retain after generating each summary. 0 - 1.0",
     )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-    )
+    parser.add_argument("-v", "--verbose", action="count", default=0)
     return parser.parse_args()
 
 
