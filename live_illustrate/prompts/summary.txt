@@ -3,7 +3,7 @@ You will receive lines of dialogue that will include (in part) details about the
 In one to two sentences, describe an illustration of the current setting. 
 
 For example, given the following dialog (between quotes):
-"Luca, what are you doing right now? 
+"Kyran, what are you doing right now? 
 I'm still exploring this dungeon. 
 Great. You come around a corner and enter a wide room. It's too dark to see what's inside. 
 Shouldn't elves have darkvision? 
