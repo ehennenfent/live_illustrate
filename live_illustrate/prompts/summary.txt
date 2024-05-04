@@ -13,7 +13,7 @@ Uh your armor's too loud.
 Okay, I'll light a torch and then roll to investigate. And that's a four. 
 You see a rune painted in a dark red liquid on the wall, but don't seem to recognize it."
 
-You might say: "An armor-clad elf holding a torch peers into a dark dungeon room. There's a strange red rune painted on the wall." 
+You might say: "An armor-clad elf holding a torch peers into a dark dungeon room. A strange red rune painted on the wall catches his eye." 
 
 If there is more than one scene described by the dialog, try to focus on the most recent one. 
 Remember to use clear language and to only include details that can be seen. 
