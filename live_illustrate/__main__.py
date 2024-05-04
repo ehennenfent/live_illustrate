@@ -85,6 +85,7 @@ def get_args() -> argparse.Namespace:
         type=argparse.FileType("r"),
         help="Read transcription lines from a text file and render. Useful for testing.",
     )
+    parser.add_argument("--data_dir", type=str, default=str(DEFAULT_DATA_DIR), help="Directory to save session data")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     return parser.parse_args()
 
@@ -117,7 +118,7 @@ def main() -> None:
         host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
     )
 
-    with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
+    with SessionData(Path(args.data_dir), echo=True) as session_data:
         # wire up some callbacks to save the intermediate data and forward it along
         def on_text_transcribed(transcription: Transcription) -> None:
             if is_transcription_interesting(transcription):
