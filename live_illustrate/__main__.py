@@ -66,33 +66,14 @@ def get_args() -> argparse.Namespace:
         choices=["1792x1024", "1024x1792", "1024x1024", "512x512", "256x256"],
     )
     parser.add_argument(
-        "--image_quality",
-        default="standard",
-        help="How fancy of an image to render",
-        choices=["standard", "hd"],
+        "--image_quality", default="standard", help="How fancy of an image to render", choices=["standard", "hd"]
     )
     parser.add_argument(
-        "--image_style",
-        default="vivid",
-        help="How stylized of an image to render",
-        choices=["vivid", "natural"],
+        "--image_style", default="vivid", help="How stylized of an image to render", choices=["vivid", "natural"]
     )
-    parser.add_argument(
-        "--server_host",
-        default="0.0.0.0",
-        help="Address to bind web server",
-    )
-    parser.add_argument(
-        "--server_port",
-        default=8080,
-        type=int,
-        help="Port to serve HTML viewer on",
-    )
-    parser.add_argument(
-        "--open",
-        action="store_true",
-        help="Automatically open a browser tab for the rendered images",
-    )
+    parser.add_argument("--server_host", default="0.0.0.0", help="Address to bind web server")
+    parser.add_argument("--server_port", default=8080, type=int, help="Port to serve HTML viewer on")
+    parser.add_argument("--open", action="store_true", help="Automatically open a browser tab for the rendered images")
     parser.add_argument(
         "--persistence_of_memory",
         default=0.2,  # Expressed as a fraction of the total buffered transcription
@@ -100,11 +81,12 @@ def get_args() -> argparse.Namespace:
         help="How much of the previous transcription to retain after generating each summary. 0 - 1.0",
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
+        "--oneshot",
+        type=argparse.FileType("r"),
+        help="Read transcription lines from a text file and render. Useful for testing.",
     )
+    parser.add_argument("--data_dir", type=str, default=str(DEFAULT_DATA_DIR), help="Directory to save session data")
+    parser.add_argument("-v", "--verbose", action="count", default=0)
     return parser.parse_args()
 
 
@@ -117,8 +99,11 @@ def main() -> None:
     logging.getLogger("requests").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)
     logging.getLogger("werkzeug").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # flask
 
-    # create each of our thread objects with the apppropriate command line args
-    transcriber = AudioTranscriber(model=args.audio_model, phrase_timeout=args.wait_minutes * args.phrase_timeout)
+    # We don't test transcription in oneshot mode
+    if not (is_oneshot := args.oneshot is not None):
+        transcriber = AudioTranscriber(model=args.audio_model, phrase_timeout=args.wait_minutes * args.phrase_timeout)
+
+    # Create each of our thread objects with the apppropriate command line args
     buffer = TextBuffer(
         wait_minutes=args.wait_minutes, max_context=args.max_context, persistence=args.persistence_of_memory
     )
@@ -133,7 +118,7 @@ def main() -> None:
         host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
     )
 
-    with SessionData(DEFAULT_DATA_DIR, echo=True) as session_data:
+    with SessionData(Path(args.data_dir), echo=True) as session_data:
         # wire up some callbacks to save the intermediate data and forward it along
         def on_text_transcribed(transcription: Transcription) -> None:
             if is_transcription_interesting(transcription):
@@ -151,7 +136,8 @@ def main() -> None:
                 session_data.save_image(image)
 
         # start each thread with the appropriate callback
-        Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()
+        if not is_oneshot:
+            Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()
         Thread(target=summarizer.start, args=(on_summary_generated,), daemon=True).start()
         Thread(target=renderer.start, args=(on_image_rendered,), daemon=True).start()
 
@@ -168,6 +154,12 @@ def main() -> None:
                 open_new_tab(f"http://{args.server_host}:{args.server_port}")
 
             Thread(target=lambda: open_browser).start()
+
+        if is_oneshot:
+            # Read all the lines from the file, pretend we transcribed them
+            for line in args.oneshot:  # type: ignore
+                # This will still dump things in the data directory. No sense short circuiting the testing.
+                on_text_transcribed(Transcription(line.strip()))
 
         # flask feels like it probably has a good ctrl+c handler, so we'll make this one the main thread
         server.start()

@@ -2,13 +2,8 @@ from datetime import datetime
 
 from openai import OpenAI
 
+from .prompts import SUMMARY, PromptManager
 from .util import AsyncThread, Summary, Transcription, num_tokens_from_string
-
-SYSTEM_PROMPT = "You are a helpful assistant that describes scenes to an artist who wants to draw them. \
-You will be given several lines of dialogue that contain details about the physical surroundings of the characters. \
-Your job is to summarize the details of the scene in a bulleted list containing 4-7 bullet points. \
-If there is more than one scene described by the dialog, summarize only the most recent one. \
-Remember to be concise and not include details that cannot be seen."  # Not so good about this last bit, eh?
 
 
 class TextSummarizer(AsyncThread):
@@ -16,6 +11,7 @@ class TextSummarizer(AsyncThread):
         super().__init__("TextSummarizer")
         self.openai_client: OpenAI = OpenAI()
         self.model: str = model
+        self.prompt_manager = PromptManager()
 
     def work(self, transcription: Transcription) -> Summary | None:
         """Sends the big buffer of provided text to ChatGPT, returns bullets describing the setting"""
@@ -28,7 +24,7 @@ class TextSummarizer(AsyncThread):
         response = self.openai_client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": self.prompt_manager.get_prompt(SUMMARY)},
                 {"role": "user", "content": text},
             ],
         )
