@@ -11,19 +11,28 @@ SAMPLE_RATE = 16000
 
 
 class AudioTranscriber(AsyncThread):
-    def __init__(self, model: str, phrase_timeout: float) -> None:
+    def __init__(self, model: str, phrase_timeout: float, compute_type: str) -> None:
         super().__init__("AudioTranscriber")
 
         self.recorder = sr.Recognizer()
         self.source = sr.Microphone(sample_rate=SAMPLE_RATE)
         self.model = model
+        self.compute_type = compute_type
         self.phrase_timeout = int(phrase_timeout * 60)
 
         self.recorder.dynamic_energy_threshold = DYNAMIC_ENERGY_THRESHOLD
 
     def work(self, _, audio_data) -> Transcription:
         """Passes audio data to whisper, spits text back out"""
-        return Transcription(self.recorder.recognize_whisper(audio_data, model=self.model).strip())
+        return Transcription(
+            self.recorder.recognize_faster_whisper(
+                audio_data,
+                model=self.model,
+                init_options={
+                    "compute_type": self.compute_type,
+                },
+            ).strip()
+        )
 
     def start(self, callback: t.Callable[[str], None]) -> None:
         with self.source:
