@@ -49,24 +49,27 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--summarize_model",
-        default="gpt-3.5-turbo",
+        default="gpt-4.1-mini",
         help="LLM to use for summarizing transcription",
-        choices=["gpt-3.5-turbo", "gpt-4"],
+        choices=["gpt-4.1-mini", "gpt-4.1", "gpt-4.1-nano", "gpt-4o-mini", "o4-mini"],
     )
     parser.add_argument(
         "--image_model",
         default="dall-e-3",
         help="Diffusion model to use for generating image",
-        choices=["dall-e-3", "dall-e-2"],
+        choices=["dall-e-3", "dall-e-2", "gpt-image-1"],
     )
     parser.add_argument(
         "--image_size",
         default="1792x1024",
         help="Size of image to render (smaller is cheaper)",
-        choices=["1792x1024", "1024x1792", "1024x1024", "512x512", "256x256"],
+        choices=["1792x1024", "1024x1792", "1024x1024", "512x512", "256x256", "1536x1024", "1024x1536"],
     )
     parser.add_argument(
-        "--image_quality", default="standard", help="How fancy of an image to render", choices=["standard", "hd"]
+        "--image_quality",
+        default="standard",
+        help="How fancy of an image to render",
+        choices=["auto", "low", "medium", "high", "standard", "hd"],
     )
     parser.add_argument(
         "--image_style", default="vivid", help="How stylized of an image to render", choices=["vivid", "natural"]
