@@ -109,7 +109,6 @@ class AsyncThread:
 def download_image(url: str) -> bytes:
     r = requests.get((url), stream=True)
     out = bytes()
-    print(r)
     if r.status_code == 200:
         for chunk in r:
             out += chunk

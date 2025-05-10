@@ -20,7 +20,7 @@ dependencies = [
     "discord.py",
     "pyaudio",
     "openai",
-    "openai-whisper",
+    "faster-whisper",
     "SpeechRecognition",
     "soundfile",
     "tiktoken",

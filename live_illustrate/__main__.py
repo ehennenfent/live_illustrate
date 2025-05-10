@@ -36,6 +36,12 @@ def get_args() -> argparse.Namespace:
         choices=["tiny.en", "base.en", "small.en", "medium.en", "large", "large-v2", "large-v3"],
     )
     parser.add_argument(
+        "--audio_compute_type",
+        default="float16",
+        help="Compute type for audio model, helps reduce memory usage when needed",
+        choices=["int8", "float16", "float32"],
+    )
+    parser.add_argument(
         "--wait_minutes",
         default=7.5,
         type=float,
@@ -108,10 +114,15 @@ def main() -> None:
     logging.getLogger("httpx").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # used by OpenAI
     logging.getLogger("requests").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)
     logging.getLogger("werkzeug").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # flask
+    logging.getLogger("faster_whisper").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # flask
 
     # We don't test transcription in oneshot mode
     if not (is_oneshot := args.oneshot is not None):
-        transcriber = AudioTranscriber(model=args.audio_model, phrase_timeout=args.wait_minutes * args.phrase_timeout)
+        transcriber = AudioTranscriber(
+            model=args.audio_model,
+            phrase_timeout=args.wait_minutes * args.phrase_timeout,
+            compute_type=args.audio_compute_type,
+        )
 
     # Create each of our thread objects with the apppropriate command line args
     buffer = TextBuffer(
