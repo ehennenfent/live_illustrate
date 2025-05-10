@@ -11,7 +11,7 @@ import tiktoken
 # Whisper's favorite phrase is "thank you", followed closely by "thanks for watching!".
 # We might miss legit transcriptions this way, but the frequency with which these phrases show up
 # without other dialogue is very low compared to the frequency with which whisper imagines them.
-TRANSCRIPTION_HALLUCINATIONS = ["Thank you.", "Thanks for watching!"]
+TRANSCRIPTION_HALLUCINATIONS = ["Thank you.", "Thanks for watching!", "I'm sorry."]
 
 
 @dataclass
