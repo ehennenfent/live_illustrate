@@ -7,9 +7,9 @@ SUMMARY = PROMPTS_FOLDER.joinpath("summary.txt")
 
 
 class PromptManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.cached: t.Dict[Path, str] = {}
-        self.last_modified = {}
+        self.last_modified: t.Dict[Path, float] = {}
 
     def get_prompt(self, path: Path) -> str:
         last_modified = path.stat().st_mtime

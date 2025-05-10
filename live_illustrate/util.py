@@ -6,6 +6,7 @@ from functools import lru_cache
 from queue import Queue
 from time import sleep
 
+import requests
 import tiktoken
 
 # Whisper's favorite phrase is "thank you", followed closely by "thanks for watching!".
@@ -103,3 +104,13 @@ class AsyncThread:
 
     def send(self, *args) -> None:
         self.queue.put(args)
+
+
+def download_image(url: str) -> bytes:
+    r = requests.get((url), stream=True)
+    out = bytes()
+    print(r)
+    if r.status_code == 200:
+        for chunk in r:
+            out += chunk
+    return out

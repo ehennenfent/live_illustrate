@@ -1,5 +1,6 @@
 import argparse
 import logging
+from base64 import b64encode
 from pathlib import Path
 from threading import Thread
 from time import sleep
@@ -13,7 +14,13 @@ from .session_data import SessionData
 from .summarize import TextSummarizer
 from .text_buffer import TextBuffer
 from .transcribe import AudioTranscriber
-from .util import Image, Summary, Transcription, is_transcription_interesting
+from .util import (
+    Image,
+    Summary,
+    Transcription,
+    download_image,
+    is_transcription_interesting,
+)
 
 load_dotenv()
 
@@ -118,7 +125,9 @@ def main() -> None:
         image_style=args.image_style,
     )
     server = ImageServer(
-        host=args.server_host, port=args.server_port, default_image=f"https://placehold.co/{args.image_size}/png"
+        host=args.server_host,
+        port=args.server_port,
+        default_image=b64encode(download_image(f"https://placehold.co/{args.image_size}/png")).decode("utf-8"),
     )
 
     with SessionData(Path(args.data_dir), echo=True) as session_data:
