@@ -30,11 +30,11 @@ class Summary(Transcription):
 
 @dataclass
 class Image(Summary):
-    image_url: str
+    image_bytes: bytes
 
     @classmethod
-    def from_summary(cls, summary: Summary, image_url: str) -> "Image":
-        return cls(summary.transcription, summary.summary, image_url)
+    def from_summary(cls, summary: Summary, image_bytes: bytes) -> "Image":
+        return cls(summary.transcription, summary.summary, image_bytes)
 
 
 @lru_cache(maxsize=2)
@@ -58,9 +58,9 @@ def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
 
 
 def is_transcription_interesting(transcription: Transcription) -> bool:
-    """If Whisper doesn't hear anything, it will sometimes emit predicatble nonsense."""
+    """If Whisper doesn't hear anything, it will sometimes emit predictable nonsense."""
 
-    # Sometimes we just get a sequnece of dots and spaces.
+    # Sometimes we just get a sequence of dots and spaces.
     is_not_empty = len(transcription.transcription.replace(".", "").replace(" ", "").strip()) > 0
 
     # Sometimes we get a phrase from TRANSCRIPTION_HALLUCINATIONS (see above)

@@ -51,7 +51,7 @@ def get_args() -> argparse.Namespace:
         "--summarize_model",
         default="gpt-4.1-mini",
         help="LLM to use for summarizing transcription",
-        choices=["gpt-4.1-mini", "gpt-4.1", "gpt-4.1-nano", "gpt-4o-mini", "o4-mini"],
+        choices=["gpt-4.1-mini", "gpt-4.1", "gpt-4.1-nano", "gpt-4o-mini", "gpt-4o" "o4-mini"],
     )
     parser.add_argument(
         "--image_model",

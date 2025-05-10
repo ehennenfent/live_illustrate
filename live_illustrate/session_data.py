@@ -27,12 +27,9 @@ class SessionData:
 
     def save_image(self, image: Image) -> None:
         try:
-            r = requests.get((image.image_url), stream=True)
-            if r.status_code == 200:
-                fname = self.data_dir.joinpath(f"{self._time_since}.png")
-                with open(fname, "wb") as outf:
-                    for chunk in r:
-                        outf.write(chunk)
+            fname = self.data_dir.joinpath(f"{self._time_since}.png")
+            with open(fname, "wb") as outf:
+                outf.write(image.image_bytes)
         except Exception as e:
             self.logger.error("failed to save image to file: %s", e)
         else:
