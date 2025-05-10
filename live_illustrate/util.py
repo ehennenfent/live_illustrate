@@ -6,12 +6,13 @@ from functools import lru_cache
 from queue import Queue
 from time import sleep
 
+import requests
 import tiktoken
 
 # Whisper's favorite phrase is "thank you", followed closely by "thanks for watching!".
 # We might miss legit transcriptions this way, but the frequency with which these phrases show up
 # without other dialogue is very low compared to the frequency with which whisper imagines them.
-TRANSCRIPTION_HALLUCINATIONS = ["Thank you.", "Thanks for watching!"]
+TRANSCRIPTION_HALLUCINATIONS = ["Thank you.", "Thanks for watching!", "I'm sorry."]
 
 
 @dataclass
@@ -30,11 +31,11 @@ class Summary(Transcription):
 
 @dataclass
 class Image(Summary):
-    image_url: str
+    image_bytes: bytes
 
     @classmethod
-    def from_summary(cls, summary: Summary, image_url: str) -> "Image":
-        return cls(summary.transcription, summary.summary, image_url)
+    def from_summary(cls, summary: Summary, image_bytes: bytes) -> "Image":
+        return cls(summary.transcription, summary.summary, image_bytes)
 
 
 @lru_cache(maxsize=2)
@@ -58,9 +59,9 @@ def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
 
 
 def is_transcription_interesting(transcription: Transcription) -> bool:
-    """If Whisper doesn't hear anything, it will sometimes emit predicatble nonsense."""
+    """If Whisper doesn't hear anything, it will sometimes emit predictable nonsense."""
 
-    # Sometimes we just get a sequnece of dots and spaces.
+    # Sometimes we just get a sequence of dots and spaces.
     is_not_empty = len(transcription.transcription.replace(".", "").replace(" ", "").strip()) > 0
 
     # Sometimes we get a phrase from TRANSCRIPTION_HALLUCINATIONS (see above)
@@ -103,3 +104,13 @@ class AsyncThread:
 
     def send(self, *args) -> None:
         self.queue.put(args)
+
+
+def download_image(url: str) -> bytes:
+    r = requests.get((url), stream=True)
+    out = bytes()
+    print(r)
+    if r.status_code == 200:
+        for chunk in r:
+            out += chunk
+    return out
