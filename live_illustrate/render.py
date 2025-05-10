@@ -24,8 +24,8 @@ class ImageRenderer(AsyncThread):
             model=self.model,
             prompt=summary.summary + "\n" + self.prompt_manager.get_prompt(IMAGE_EXTENSION),
             size=self.size,  # type: ignore[arg-type]
-            # quality=self.image_quality,  # type: ignore[arg-type]
-            # style=self.image_style,  # type: ignore[arg-type]
+            quality=self.image_quality,  # type: ignore[arg-type]
+            style=self.image_style,  # type: ignore[arg-type]
             response_format="b64_json",
             n=1,
         ).data
