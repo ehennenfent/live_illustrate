@@ -3,7 +3,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-import requests
 from discord import File, SyncWebhook
 
 from .util import Image, Summary, Transcription

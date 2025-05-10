@@ -1,9 +1,9 @@
 import typing as t
+from base64 import b64encode
 
 from flask import Flask, Response, send_from_directory
 
 from .util import Image
-from base64 import b64encode
 
 IMAGE_HTML = """<div hx-get="/image/{index}" hx-trigger="every 5s" hx-swap="outerHTML transition:true" class="imgbox"><img src='data:image/png;base64, {image_b64}' class='center-fit'/></div>"""
 
@@ -18,7 +18,7 @@ class ImageServer:
         self.host: str = host
         self.port: int = port
 
-        self.images: t.List[str] = default_image
+        self.images: t.List[str] = [default_image]
 
         self.app = Flask(__name__)
 
