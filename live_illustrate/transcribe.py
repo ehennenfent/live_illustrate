@@ -36,7 +36,9 @@ class AudioTranscriber(AsyncThread):
 
     def start(self, callback: t.Callable[[str], None]) -> None:
         with self.source:
-            self.recorder.adjust_for_ambient_noise(self.source)
+            print("Adjusting for ambient noise... ", end="")
+            self.recorder.adjust_for_ambient_noise(self.source, duration=2)
+            print("Done!")
         # This creates a separate thread for the audio recording,
         # but it's non-blocking, so we just let it live here
         self.recorder.listen_in_background(self.source, self.send, phrase_time_limit=self.phrase_timeout)

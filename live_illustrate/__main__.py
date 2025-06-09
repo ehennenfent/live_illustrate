@@ -31,9 +31,9 @@ def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser("Automatic live illustration for table-top RPGs")
     parser.add_argument(
         "--audio_model",
-        default="medium.en",
+        default="turbo",
         help="Whisper model to use for audio transcription",
-        choices=["tiny.en", "base.en", "small.en", "medium.en", "large", "large-v2", "large-v3"],
+        choices=["tiny.en", "base.en", "small.en", "medium.en", "large", "large-v2", "large-v3", "turbo"],
     )
     parser.add_argument(
         "--audio_compute_type",
