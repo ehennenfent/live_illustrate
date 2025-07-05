@@ -19,6 +19,7 @@ from .util import (
     Image,
     Summary,
     Transcription,
+    audiodata_from_file,
     download_image,
     is_transcription_interesting,
 )
@@ -96,6 +97,11 @@ def get_args() -> argparse.Namespace:
         type=argparse.FileType("r"),
         help="Read transcription lines from a text file and render. Useful for testing.",
     )
+    parser.add_argument(
+        "--audio_oneshot",
+        type=lambda dir_path: (p if (p := Path(dir_path)).is_dir() else None),
+        help="Read audio files from a directory and transcribe them. Useful for testing.",
+    )
     parser.add_argument("--data_dir", type=str, default=str(DEFAULT_DATA_DIR), help="Directory to save session data")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--dont-save-audio", action="store_true", help="Don't save audio chunks to disk")
@@ -111,8 +117,10 @@ def main() -> None:
     logging.getLogger("requests").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)
     logging.getLogger("werkzeug").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # flask
 
-    # We don't test transcription in oneshot mode
-    if not (is_oneshot := args.oneshot is not None):
+    is_text_oneshot = args.oneshot is not None
+    is_audio_oneshot = args.audio_oneshot is not None
+    # We don't test transcription in text-baseed oneshot mode
+    if not is_text_oneshot:
         transcriber = AudioTranscriber(model=args.audio_model, phrase_timeout=args.wait_minutes * args.phrase_timeout)
 
     # Create each of our thread objects with the apppropriate command line args
@@ -135,10 +143,10 @@ def main() -> None:
     with SessionData(Path(args.data_dir), echo=True) as session_data:
         # wire up some callbacks to save the intermediate data and forward it along
         def on_audio_recorded(audio_data: sr.AudioData) -> None:
-            if not args.dont_save_audio:
+            if not args.dont_save_audio and not is_audio_oneshot:
                 session_data.save_audio_chunk(audio_data)
 
-        if not is_oneshot:
+        if not is_text_oneshot:
             transcriber.audio_callback = on_audio_recorded
 
         def on_text_transcribed(transcription: Transcription) -> None:
@@ -157,7 +165,7 @@ def main() -> None:
                 session_data.save_image(image)
 
         # start each thread with the appropriate callback
-        if not is_oneshot:
+        if not is_audio_oneshot and not is_text_oneshot:
             Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()
         Thread(target=summarizer.start, args=(on_summary_generated,), daemon=True).start()
         Thread(target=renderer.start, args=(on_image_rendered,), daemon=True).start()
@@ -176,16 +184,24 @@ def main() -> None:
 
             Thread(target=lambda: open_browser).start()
 
-        if is_oneshot:
+        if is_text_oneshot:
             # Read all the lines from the file, pretend we transcribed them
             for line in args.oneshot:  # type: ignore
                 # This will still dump things in the data directory. No sense short circuiting the testing.
                 on_text_transcribed(Transcription(line.strip()))
 
+        if is_audio_oneshot:
+            # Read all the audio files from the directory, transcribe them
+            for audio_file in sorted(args.audio_oneshot.glob("*.wav")):
+                if audio_file.suffix.lower() != ".wav":
+                    raise ValueError(f"Expected .wav files, got {audio_file.suffix}")
+                print(f"Transcribing {audio_file.name}...", flush=True)
+                on_text_transcribed(transcriber.work(None, audiodata_from_file(audio_file)))
+
         # flask feels like it probably has a good ctrl+c handler, so we'll make this one the main thread
         server.start()
         session_data.print_transcription_stats()
-        if not is_oneshot:
+        if not is_text_oneshot and not is_audio_oneshot and not args.dont_save_audio:
             print("Saving current audio chunks to file...", flush=True)
             session_data.stitch_audio_chunks_to_wav()
         print("Okay we're exiting for real now. Bye!")

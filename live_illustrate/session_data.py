@@ -136,9 +136,19 @@ class SessionData:
             self.logger.error("failed to write transcript to file: %s", e)
 
     def print_transcription_stats(self) -> None:
+        # Calculate average audio segment duration
+        cursor = sqlite3.connect(self.db_file).cursor()
+        cursor.execute(
+            "SELECT expected_duration FROM time_series WHERE variant = ?", (TimestampVariant.TRANSCRIBE.value,)
+        )
+        avg, std = mean_and_stdev(row[0] for row in cursor.fetchall() if row[0] is not None)
+        print(f"Average audio segment duration: {avg / 1000.0:.2f}s (std dev: {std / 1000.0:.2f}s)")
         # calculate average time between db entries
         cursor = sqlite3.connect(self.db_file).cursor()
-        cursor.execute("SELECT timestamp FROM time_series WHERE variant = ?", (TimestampVariant.TRANSCRIBE.value,))
+        cursor.execute(
+            "SELECT timestamp FROM time_series WHERE variant = ? ORDER BY timestamp",
+            (TimestampVariant.TRANSCRIBE.value,),
+        )
         timestamps = [row[0] for row in cursor.fetchall()]
         avg, std = mean_and_stdev(timestamps[i] - timestamps[i - 1] for i in range(1, len(timestamps)))
         print(f"Average time between transcription entries: {avg / 1000.0:.2f}s (std dev: {std / 1000.0:.2f}s)")
