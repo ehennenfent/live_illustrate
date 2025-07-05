@@ -17,7 +17,11 @@ def _get_duration_millis(audio: sr.AudioData) -> int:
 
 class AudioTranscriber(AsyncThread):
     def __init__(
-        self, model: str, phrase_timeout: float, audio_callback: t.Callable[[sr.AudioData], None] | None = None
+        self,
+        model: str,
+        phrase_timeout: float,
+        force_cpu: bool = False,
+        audio_callback: t.Callable[[sr.AudioData], None] | None = None,
     ) -> None:
         super().__init__("AudioTranscriber")
 
@@ -25,6 +29,7 @@ class AudioTranscriber(AsyncThread):
         self.source = sr.Microphone(sample_rate=SAMPLE_RATE)
         self.model = model
         self.phrase_timeout = int(phrase_timeout * 60)
+        self.load_options = {} if not force_cpu else {"device": "cpu"}
 
         self.recorder.dynamic_energy_threshold = DYNAMIC_ENERGY_THRESHOLD
         self.recorder.operation_timeout = self.phrase_timeout * 2.5
@@ -38,6 +43,7 @@ class AudioTranscriber(AsyncThread):
         transcribed = self.recorder.recognize_whisper(
             audio_data,
             model=self.model,
+            load_options=self.load_options,
             language="english",
         ).strip()
         return Transcription.with_timestamps(

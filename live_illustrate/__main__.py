@@ -8,6 +8,7 @@ from webbrowser import open_new_tab
 
 import speech_recognition as sr
 import torch
+import whisper # type: ignore[import]
 from dotenv import load_dotenv
 
 from .render import ImageRenderer
@@ -36,7 +37,7 @@ def get_args() -> argparse.Namespace:
         "--audio_model",
         default="turbo",
         help="Whisper model to use for audio transcription",
-        choices=["tiny.en", "base.en", "small.en", "medium.en", "large", "large-v2", "large-v3", "turbo"],
+        choices=whisper.available_models(),
     )
     parser.add_argument(
         "--wait_minutes",
@@ -106,6 +107,9 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("--data_dir", type=str, default=str(DEFAULT_DATA_DIR), help="Directory to save session data")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--dont-save-audio", action="store_true", help="Don't save audio chunks to disk")
+    parser.add_argument(
+        "--force_cpu_transcription", action="store_true", help="Don't use GPU for transcription, even when available"
+    )
     return parser.parse_args()
 
 
@@ -122,7 +126,11 @@ def main() -> None:
     is_audio_oneshot = args.audio_oneshot is not None
     # We don't test transcription in text-baseed oneshot mode
     if not is_text_oneshot:
-        transcriber = AudioTranscriber(model=args.audio_model, phrase_timeout=args.wait_minutes * args.phrase_timeout)
+        transcriber = AudioTranscriber(
+            model=args.audio_model,
+            phrase_timeout=args.wait_minutes * args.phrase_timeout,
+            force_cpu=args.force_cpu_transcription,
+        )
 
     # Create each of our thread objects with the apppropriate command line args
     buffer = TextBuffer(
@@ -165,7 +173,7 @@ def main() -> None:
                 server.update_image(image)
                 session_data.save_image(image)
 
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and not args.force_cpu_transcription:
             print("GPU detected, using CUDA for processing")
         else:
             print("GPU compute is NOT available. Falling back to CPU.")
