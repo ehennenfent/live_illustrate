@@ -106,6 +106,8 @@ class AsyncThread:
     def start(self, callback) -> None:
         while True:
             if not self.queue.empty():
+                if self.queue.qsize() > 25:
+                    self.logger.warning("%d items are backed up in the queue", self.queue.qsize())
                 try:
                     callback(self.work(*self.queue.get()))
                     self._consecutive_errors = 0
