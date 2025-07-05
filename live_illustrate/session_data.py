@@ -1,13 +1,24 @@
+import enum
 import logging
 import os
+import sqlite3
+import time
 from datetime import datetime
 from pathlib import Path
 
+import speech_recognition as sr  # type: ignore
 from discord import File, SyncWebhook
 
-from .util import Image, Summary, Transcription
+from .util import Image, Summary, Transcription, mean_and_stdev
 
 DISCORD_WEBHOOK = "DISCORD_WEBHOOK"
+
+
+class TimestampVariant(enum.IntEnum):
+    RECORD = 0
+    TRANSCRIBE = 1
+    SUMMARIZE = 2
+    ILLUSTRATE = 3
 
 
 class SessionData:
@@ -23,6 +34,60 @@ class SessionData:
         self.discord_webhook: str | None = os.getenv(DISCORD_WEBHOOK)
         if self.discord_webhook is not None:
             self.logger.info("Discord upload is enabled")
+
+        self.db_file = self.data_dir.joinpath("timestamps.db")
+        self.ts_db: sqlite3.Connection | None = None
+
+    def _init_db(self) -> None:
+        db = sqlite3.connect(self.db_file)
+        cursor = db.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS time_series (
+                timestamp INTEGER PRIMARY KEY,
+                variant INTEGER NOT NULL,
+                actual_duration INTEGER NOT NULL,
+                expected_duration INTEGER
+            )
+            """
+        )
+        db.commit()
+
+    def save_audio_chunk(self, audio: sr.AudioData) -> None:
+        try:
+            fname = self.data_dir.joinpath(f"{self._time_since}.wav")
+            with open(fname, "wb") as outf:
+                outf.write(audio.get_wav_data())
+        except Exception as e:
+            self.logger.error("failed to save audio data to file: %s", e)
+
+    def stitch_audio_chunks_to_wav(self) -> None:
+        """Stitches all audio chunks together into a single WAV file."""
+        try:
+            audio_chunks = sorted(self.data_dir.glob("*.wav"))
+            if audio_chunks:
+                with open(self.data_dir.joinpath("audio").joinpath("recording.wav"), "wb") as stitched_file:
+                    for chunk in audio_chunks:
+                        with open(chunk, "rb") as f:
+                            stitched_file.write(f.read())
+        except Exception as e:
+            self.logger.error("failed to stitch audio chunks into WAV file: %s", e)
+
+    def save_time_series(
+        self, variant: TimestampVariant, actual_duration: int, expected_duration: int | None = None
+    ) -> None:
+        if self.ts_db is None:
+            # We can now only use this database connection from this thread.
+            self.ts_db = sqlite3.connect(self.db_file)
+        try:
+            cursor = self.ts_db.cursor()
+            cursor.execute(
+                "INSERT INTO time_series (timestamp, variant, actual_duration, expected_duration) VALUES (?, ?, ?, ?)",
+                (time.time_ns() // 1_000_000, variant.value, actual_duration, expected_duration),
+            )
+            self.ts_db.commit()
+        except Exception as e:
+            self.logger.error("failed to save time series data: %s", e)
 
     def save_image(self, image: Image) -> None:
         try:
@@ -56,8 +121,30 @@ class SessionData:
                 if self.echo:
                     print(self._time_since, ">", transcription.transcription)
                 print(self._time_since, ">", transcription.transcription, file=transf, flush=True)
+                if hasattr(transcription, "transcription_time"):
+                    self.save_time_series(
+                        TimestampVariant.TRANSCRIBE,
+                        transcription.transcription_time,
+                        getattr(transcription, "audio_duration", None),
+                    )
         except Exception as e:
             self.logger.error("failed to write transcript to file: %s", e)
+
+    def print_transcription_stats(self) -> None:
+        # calculate average time between db entries
+        cursor = sqlite3.connect(self.db_file).cursor()
+        cursor.execute("SELECT timestamp FROM time_series WHERE variant = ?", (TimestampVariant.TRANSCRIBE.value,))
+        timestamps = [row[0] for row in cursor.fetchall()]
+        avg, std = mean_and_stdev(timestamps[i] - timestamps[i - 1] for i in range(1, len(timestamps)))
+        print(f"Average time between transcription entries: {avg / 1000.0:.2f}s (std dev: {std / 1000.0:.2f}s)")
+        # calculate average transcription time as a fraction of audio duration
+        cursor.execute(
+            "SELECT actual_duration, expected_duration FROM time_series WHERE variant = ?",
+            (TimestampVariant.TRANSCRIBE.value,),
+        )
+        durations = cursor.fetchall()
+        avg, std = mean_and_stdev(actual / expected for actual, expected in durations if expected is not None)
+        print(f"Average transcription time as a fraction of audio duration: {avg:.2f} (std dev: {std:.2f})")
 
     @property
     def _time_since(self) -> str:
@@ -71,6 +158,8 @@ class SessionData:
         if not (parent := self.data_dir.parent).exists():
             parent.mkdir()
         self.data_dir.mkdir()
+        self.data_dir.joinpath("audio").mkdir()
+        self._init_db()
         return self
 
     def __exit__(self, *exc) -> None:

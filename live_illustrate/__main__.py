@@ -175,6 +175,11 @@ def main() -> None:
 
         # flask feels like it probably has a good ctrl+c handler, so we'll make this one the main thread
         server.start()
+        session_data.print_transcription_stats()
+        if not is_oneshot:
+            print("Saving current audio chunks to file...", flush=True)
+            session_data.stitch_audio_chunks_to_wav()
+        print("Okay we're exiting for real now. Bye!")
 
 
 if __name__ == "__main__":

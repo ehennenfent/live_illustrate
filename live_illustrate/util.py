@@ -4,6 +4,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from functools import lru_cache
 from queue import Queue
+from statistics import mean, stdev
 from time import sleep
 
 import requests
@@ -18,6 +19,16 @@ TRANSCRIPTION_HALLUCINATIONS = ["Thank you.", "Thanks for watching!", "I'm sorry
 @dataclass
 class Transcription:
     transcription: str
+
+    @classmethod
+    def with_timestamps(
+        cls, transcription: str, transcription_time: int, audio_duration: t.Optional[int] = None
+    ) -> "Transcription":
+        instance = cls(transcription)
+        # clunkier than `=`, but doesn't set off mypy
+        setattr(instance, "transcription_time", transcription_time)
+        setattr(instance, "audio_duration", audio_duration)
+        return instance
 
 
 @dataclass
@@ -113,3 +124,8 @@ def download_image(url: str) -> bytes:
         for chunk in r:
             out += chunk
     return out
+
+
+def mean_and_stdev(data: t.Any) -> tuple[float, float]:
+    values = list(data)
+    return (mean(values), stdev(values)) if len(values) > 1 else (0.0, 0.0)
