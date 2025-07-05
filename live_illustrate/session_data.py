@@ -3,6 +3,7 @@ import logging
 import os
 import sqlite3
 import time
+import wave
 from datetime import datetime
 from pathlib import Path
 
@@ -29,6 +30,7 @@ class SessionData:
         self.logger = logging.getLogger("SessionData")
 
         self.data_dir: Path = data_dir.joinpath(self.start_time.strftime("%Y_%m_%d-%H_%M_%S"))
+        self.audio_dir: Path = self.data_dir.joinpath("audio_chunks")
         self.echo: bool = echo
 
         self.discord_webhook: str | None = os.getenv(DISCORD_WEBHOOK)
@@ -55,21 +57,24 @@ class SessionData:
 
     def save_audio_chunk(self, audio: sr.AudioData) -> None:
         try:
-            fname = self.data_dir.joinpath(f"{self._time_since}.wav")
+            fname = self.audio_dir.joinpath(f"{self._time_since}.wav")
             with open(fname, "wb") as outf:
                 outf.write(audio.get_wav_data())
         except Exception as e:
             self.logger.error("failed to save audio data to file: %s", e)
 
     def stitch_audio_chunks_to_wav(self) -> None:
-        """Stitches all audio chunks together into a single WAV file."""
+        """Using the wave library, read all the audio chunks and save them as a single file"""
         try:
-            audio_chunks = sorted(self.data_dir.glob("*.wav"))
-            if audio_chunks:
-                with open(self.data_dir.joinpath("audio").joinpath("recording.wav"), "wb") as stitched_file:
-                    for chunk in audio_chunks:
-                        with open(chunk, "rb") as f:
-                            stitched_file.write(f.read())
+            output_file = self.data_dir.joinpath("recording.wav")
+            with wave.open(str(output_file), "wb") as wav_out:
+                is_init = False
+                for audio_chunk in sorted(self.audio_dir.glob("*.wav")):
+                    with wave.open(str(audio_chunk), "rb") as chunk_in:
+                        if not is_init:
+                            wav_out.setparams(chunk_in.getparams())
+                            is_init = True
+                        wav_out.writeframes(chunk_in.readframes(chunk_in.getnframes()))
         except Exception as e:
             self.logger.error("failed to stitch audio chunks into WAV file: %s", e)
 
@@ -158,7 +163,7 @@ class SessionData:
         if not (parent := self.data_dir.parent).exists():
             parent.mkdir()
         self.data_dir.mkdir()
-        self.data_dir.joinpath("audio").mkdir()
+        self.audio_dir.mkdir()
         self._init_db()
         return self
 

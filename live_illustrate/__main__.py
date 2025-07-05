@@ -6,6 +6,7 @@ from threading import Thread
 from time import sleep
 from webbrowser import open_new_tab
 
+import speech_recognition as sr  # type: ignore
 from dotenv import load_dotenv
 
 from .render import ImageRenderer
@@ -97,6 +98,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument("--data_dir", type=str, default=str(DEFAULT_DATA_DIR), help="Directory to save session data")
     parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("--dont-save-audio", action="store_true", help="Don't save audio chunks to disk")
     return parser.parse_args()
 
 
@@ -132,6 +134,13 @@ def main() -> None:
 
     with SessionData(Path(args.data_dir), echo=True) as session_data:
         # wire up some callbacks to save the intermediate data and forward it along
+        def on_audio_recorded(audio_data: sr.AudioData) -> None:
+            if not args.dont_save_audio:
+                session_data.save_audio_chunk(audio_data)
+
+        if not is_oneshot:
+            transcriber.audio_callback = on_audio_recorded
+
         def on_text_transcribed(transcription: Transcription) -> None:
             if is_transcription_interesting(transcription):
                 session_data.save_transcription(transcription)
