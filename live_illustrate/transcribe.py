@@ -1,7 +1,7 @@
 import typing as t
 from time import time_ns
 
-import speech_recognition as sr  # type: ignore
+import speech_recognition as sr
 
 from .util import AsyncThread, Transcription
 

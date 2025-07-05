@@ -1,13 +1,16 @@
 import logging
 import typing as t
+import wave
 from abc import abstractmethod
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from queue import Queue
 from statistics import mean, stdev
 from time import sleep
 
 import requests
+import speech_recognition as sr
 import tiktoken
 
 # Whisper's favorite phrase is "thank you", followed closely by "thanks for watching!".
@@ -129,3 +132,11 @@ def download_image(url: str) -> bytes:
 def mean_and_stdev(data: t.Any) -> tuple[float, float]:
     values = list(data)
     return (mean(values), stdev(values)) if len(values) > 1 else (0.0, 0.0)
+
+
+def audiodata_from_file(path: Path) -> sr.AudioData:
+    with wave.open(str(path), "rb") as wav_file:
+        sample_rate = wav_file.getframerate()
+        sample_width = wav_file.getsampwidth()
+        frame_data = wav_file.readframes(wav_file.getnframes())
+        return sr.AudioData(frame_data=frame_data, sample_rate=sample_rate, sample_width=sample_width)

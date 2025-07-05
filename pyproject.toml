@@ -62,3 +62,7 @@ profile = "black"
 
 [tool.setuptools]
 py-modules = ["live_illustrate"]
+
+[[tool.mypy.overrides]]
+module = ["speech_recognition.*"]
+ignore_missing_imports = true

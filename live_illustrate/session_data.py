@@ -7,7 +7,7 @@ import wave
 from datetime import datetime
 from pathlib import Path
 
-import speech_recognition as sr  # type: ignore
+import speech_recognition as sr
 from discord import File, SyncWebhook
 
 from .util import Image, Summary, Transcription, mean_and_stdev

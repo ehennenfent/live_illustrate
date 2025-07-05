@@ -6,7 +6,7 @@ from threading import Thread
 from time import sleep
 from webbrowser import open_new_tab
 
-import speech_recognition as sr  # type: ignore
+import speech_recognition as sr
 from dotenv import load_dotenv
 
 from .render import ImageRenderer
