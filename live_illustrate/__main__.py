@@ -8,7 +8,7 @@ from webbrowser import open_new_tab
 
 import speech_recognition as sr
 import torch
-import whisper # type: ignore[import]
+import whisper  # type: ignore[import]
 from dotenv import load_dotenv
 
 from .render import ImageRenderer
@@ -24,6 +24,7 @@ from .util import (
     audiodata_from_file,
     download_image,
     is_transcription_interesting,
+    list_audio_devices,
 )
 
 load_dotenv()
@@ -121,6 +122,11 @@ def main() -> None:
     logging.getLogger("httpx").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # used by OpenAI
     logging.getLogger("requests").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)
     logging.getLogger("werkzeug").setLevel(logging.INFO if args.verbose > 0 else logging.WARNING)  # flask
+
+    if args.verbose > 0:
+        print("Here are the available input devices on your system:")
+        list_audio_devices()
+        print("To change the selected input device, set the AUDIO_DEVICE_IDX environment variable.")
 
     is_text_oneshot = args.oneshot is not None
     is_audio_oneshot = args.audio_oneshot is not None

@@ -1,3 +1,4 @@
+import os
 import typing as t
 from time import time_ns
 
@@ -9,6 +10,7 @@ from .util import AsyncThread, Transcription
 # Our party talks a lot.
 DYNAMIC_ENERGY_THRESHOLD = True
 SAMPLE_RATE = 16000
+AUDIO_DEVICE_IDX = "AUDIO_DEVICE_IDX"
 
 
 def _get_duration_millis(audio: sr.AudioData) -> int:
@@ -24,9 +26,12 @@ class AudioTranscriber(AsyncThread):
         audio_callback: t.Callable[[sr.AudioData], None] | None = None,
     ) -> None:
         super().__init__("AudioTranscriber")
+        self.microphone_idx: str | None = os.getenv(AUDIO_DEVICE_IDX, None)
 
         self.recorder = sr.Recognizer()
-        self.source = sr.Microphone(sample_rate=SAMPLE_RATE)
+        self.source = sr.Microphone(
+            device_index=int(self.microphone_idx) if self.microphone_idx is not None else None, sample_rate=SAMPLE_RATE
+        )
         self.model = model
         self.phrase_timeout = int(phrase_timeout * 60)
         self.load_options = {} if not force_cpu else {"device": "cpu"}

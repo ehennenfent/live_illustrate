@@ -9,6 +9,7 @@ from queue import Queue
 from statistics import mean, stdev
 from time import sleep
 
+import pyaudio as pa  # type: ignore[import]
 import requests
 import speech_recognition as sr
 import tiktoken
@@ -143,3 +144,18 @@ def audiodata_from_file(path: Path) -> sr.AudioData:
         sample_width = wav_file.getsampwidth()
         frame_data = wav_file.readframes(wav_file.getnframes())
         return sr.AudioData(frame_data=frame_data, sample_rate=sample_rate, sample_width=sample_width)
+
+
+def list_audio_devices():
+    """Lists all audio devices available on the system."""
+    p = pa.PyAudio()
+    default = p.get_default_input_device_info()["index"]
+
+    for i in range(p.get_device_count()):
+        device_info = p.get_device_info_by_index(i)
+        idx = device_info["index"]
+        name = device_info["name"]
+        is_input = device_info["maxInputChannels"] > 0
+        if is_input:
+            print(f"{idx}: {name}", "(Default)" if idx == default else "")
+    p.terminate()
