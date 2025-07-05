@@ -44,7 +44,7 @@ class SessionData:
     def save_summary(self, summary: Summary) -> None:
         """saves the provided text to its own file"""
         try:
-            with open(self.data_dir.joinpath(f"{self._time_since}.txt"), "w") as summaryf:
+            with open(self.data_dir.joinpath(f"{self._time_since}.txt"), "w", encoding="utf-8") as summaryf:
                 print(summary.summary, file=summaryf)
         except Exception as e:
             self.logger.error("failed to write summary to file: %s", e)
@@ -52,7 +52,7 @@ class SessionData:
     def save_transcription(self, transcription: Transcription) -> None:
         """appends the provided text to the transcript file"""
         try:
-            with open(self.data_dir.joinpath("transcript.txt"), "a") as transf:
+            with open(self.data_dir.joinpath("transcript.txt"), "a", encoding="utf-8") as transf:
                 if self.echo:
                     print(self._time_since, ">", transcription.transcription)
                 print(self._time_since, ">", transcription.transcription, file=transf, flush=True)
