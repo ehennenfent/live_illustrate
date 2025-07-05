@@ -22,12 +22,13 @@ TRANSCRIPTION_HALLUCINATIONS = ["Thank you.", "Thanks for watching!", "I'm sorry
 @dataclass
 class Transcription:
     transcription: str
+    start_millis: int
 
     @classmethod
     def with_timestamps(
-        cls, transcription: str, transcription_time: int, audio_duration: t.Optional[int] = None
+        cls, transcription: str, start_millis: int, transcription_time: int, audio_duration: t.Optional[int] = None
     ) -> "Transcription":
-        instance = cls(transcription)
+        instance = cls(transcription, start_millis)
         # clunkier than `=`, but doesn't set off mypy
         setattr(instance, "transcription_time", transcription_time)
         setattr(instance, "audio_duration", audio_duration)
@@ -40,7 +41,7 @@ class Summary(Transcription):
 
     @classmethod
     def from_transcription(cls, transcription: Transcription, summary: str) -> "Summary":
-        return cls(transcription.transcription, summary)
+        return cls(transcription.transcription, transcription.start_millis, summary)
 
 
 @dataclass
@@ -49,7 +50,7 @@ class Image(Summary):
 
     @classmethod
     def from_summary(cls, summary: Summary, image_bytes: bytes) -> "Image":
-        return cls(summary.transcription, summary.summary, image_bytes)
+        return cls(summary.transcription, summary.start_millis, summary.summary, image_bytes)
 
 
 @lru_cache(maxsize=2)
@@ -60,13 +61,13 @@ def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> i
     return num_tokens
 
 
-def get_last_n_tokens(buffer: t.List[str], n: int) -> t.List[str]:
+def get_last_n_tokens(buffer: t.List[Transcription], n: int) -> t.List[Transcription]:
     """Conservatively grabs the last n-ish tokens worth of lines from the buffer. Will undershoot."""
     if not buffer:
         return []
-    context: t.List[str] = []
+    context: t.List[Transcription] = []
     for line in reversed(buffer):
-        if num_tokens_from_string("\n".join(context) + "\n" + line) > n:
+        if num_tokens_from_string("\n".join(t.transcription for t in context) + "\n" + line.transcription) > n:
             break
         context.append(line)
     return [c for c in reversed(context)]

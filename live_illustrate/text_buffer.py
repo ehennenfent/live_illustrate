@@ -21,15 +21,13 @@ class TextBuffer(AsyncThread):
     def get_context(self) -> Transcription:
         """Grabs the last max_context tokens from the buffer. If persistence < 1, trims it down
         to at most persistence * 100 %"""
-        as_text = [t.transcription for t in self.buffer]
-        context = Transcription("\n".join(get_last_n_tokens(as_text, self.max_context)))
+        insert_into_context = get_last_n_tokens(self.buffer, self.max_context)
+        context = Transcription(
+            "\n".join(t.transcription for t in insert_into_context),
+            start_millis=insert_into_context[0].start_millis if insert_into_context else 0,
+        )
         if self.persistence < 1.0:
-            self.buffer = [
-                Transcription(line)
-                for line in get_last_n_tokens(
-                    as_text, int(self.persistence * num_tokens_from_string("\n".join(as_text)))
-                )
-            ]
+            self.buffer = get_last_n_tokens(self.buffer, int(self.persistence * self.total_tokens))
         return context
 
     def buffer_forever(self, callback: t.Callable[[Transcription], t.Any]) -> None:
@@ -41,3 +39,7 @@ class TextBuffer(AsyncThread):
                 last_run = datetime.now()
                 callback(self.get_context())
             sleep(1)
+
+    @property
+    def total_tokens(self) -> int:
+        return num_tokens_from_string("\n".join(t.transcription for t in self.buffer))

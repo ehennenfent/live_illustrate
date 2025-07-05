@@ -7,6 +7,7 @@ from time import sleep
 from webbrowser import open_new_tab
 
 import speech_recognition as sr
+import torch
 from dotenv import load_dotenv
 
 from .render import ImageRenderer
@@ -164,6 +165,11 @@ def main() -> None:
                 server.update_image(image)
                 session_data.save_image(image)
 
+        if torch.cuda.is_available():
+            print("GPU detected, using CUDA for processing")
+        else:
+            print("GPU compute is NOT available. Falling back to CPU.")
+
         # start each thread with the appropriate callback
         if not is_audio_oneshot and not is_text_oneshot:
             Thread(target=transcriber.start, args=(on_text_transcribed,), daemon=True).start()
@@ -186,9 +192,9 @@ def main() -> None:
 
         if is_text_oneshot:
             # Read all the lines from the file, pretend we transcribed them
-            for line in args.oneshot:  # type: ignore
+            for i, line in enumerate(args.oneshot):  # type: ignore
                 # This will still dump things in the data directory. No sense short circuiting the testing.
-                on_text_transcribed(Transcription(line.strip()))
+                on_text_transcribed(Transcription(line.strip(), start_millis=i * 1000))
 
         if is_audio_oneshot:
             # Read all the audio files from the directory, transcribe them

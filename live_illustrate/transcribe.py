@@ -27,6 +27,7 @@ class AudioTranscriber(AsyncThread):
         self.phrase_timeout = int(phrase_timeout * 60)
 
         self.recorder.dynamic_energy_threshold = DYNAMIC_ENERGY_THRESHOLD
+        self.recorder.operation_timeout = self.phrase_timeout * 2.5
 
         self.audio_callback = audio_callback
 
@@ -34,9 +35,14 @@ class AudioTranscriber(AsyncThread):
         """Passes audio data to whisper, spits text back out"""
         audio_duration = _get_duration_millis(audio_data)
         start_millis = time_ns() // 1_000_000
-        transcribed = self.recorder.recognize_whisper(audio_data, model=self.model).strip()
+        transcribed = self.recorder.recognize_whisper(
+            audio_data,
+            model=self.model,
+            language="english",
+        ).strip()
         return Transcription.with_timestamps(
             transcription=transcribed,
+            start_millis=start_millis,
             transcription_time=(time_ns() // 1_000_000 - start_millis),
             audio_duration=audio_duration,
         )
